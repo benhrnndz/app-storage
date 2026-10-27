@@ -1,14 +1,31 @@
 // lib/main.dart
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'features/navigation/main_navigation_screen.dart';
+import 'features/auth/services/auth_service.dart';
+import 'features/auth/services/firebase_auth_service.dart';
+import 'features/auth/widgets/auth_gate.dart';
+import 'firebase_options.dart';
 
-void main() {
-  runApp(const StudentLmsApp());
+void main() async {
+  // Ensure Flutter engine bindings are initialized before calling async platform channels
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase with our auto-generated cloud project options
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Concrete Google OAuth + Firebase Auth service
+  final authService = FirebaseAuthService();
+
+  runApp(StudentLmsApp(authService: authService));
 }
 
 /// The root application widget.
 class StudentLmsApp extends StatelessWidget {
-  const StudentLmsApp({super.key});
+  final AuthService authService;
+
+  const StudentLmsApp({super.key, required this.authService});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +52,7 @@ class StudentLmsApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const MainNavigationScreen(),
+      home: AuthGate(authService: authService),
     );
   }
 }
