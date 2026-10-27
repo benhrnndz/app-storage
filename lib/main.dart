@@ -17,18 +17,21 @@ class StudentLmsApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFF3F5F9), // iOS light canvas
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E88E5), // Academic Blue
+          seedColor: const Color(0xFF007AFF), // iOS System Blue
           brightness: Brightness.light,
         ),
         appBarTheme: const AppBarTheme(
           centerTitle: false,
           elevation: 0,
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
         ),
         cardTheme: CardThemeData(
-          elevation: 2,
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(20),
           ),
         ),
       ),
