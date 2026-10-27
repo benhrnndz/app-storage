@@ -1,13 +1,22 @@
 // lib/features/navigation/main_navigation_screen.dart
 import 'package:flutter/material.dart';
 import '../../core/widgets/glass_card.dart';
+import '../../models/auth_user.dart';
+import '../auth/services/auth_service.dart';
 import '../courses/screens/courses_screen.dart';
 import '../schedule/screens/schedule_screen.dart';
 
 /// The root host screen providing an iOS-inspired floating glass
 /// navigation bar between Courses (Academic Hub) and Schedule (Timetable & Calendar).
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  final AuthService? authService;
+  final AuthUser? currentUser;
+
+  const MainNavigationScreen({
+    super.key,
+    this.authService,
+    this.currentUser,
+  });
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -17,20 +26,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   // Index of the active tab: 0 = Courses, 1 = Schedule
   int _currentIndex = 0;
 
-  // The pages hosted in the bottom navigation
-  final List<Widget> _screens = const [
-    CoursesScreen(),
-    ScheduleScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    // The pages hosted in the bottom navigation
+    final screens = [
+      CoursesScreen(
+        authService: widget.authService,
+        currentUser: widget.currentUser,
+      ),
+      const ScheduleScreen(),
+    ];
+
     return Scaffold(
       // extendBody allows scrollable content to flow behind the glass navigation bar
       extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: screens,
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
