@@ -1,5 +1,6 @@
 // lib/features/courses/screens/course_details_screen.dart
 import 'package:flutter/material.dart';
+import '../../../core/widgets/glass_card.dart';
 import '../../../data/mock_data.dart';
 import '../../../models/course.dart';
 import '../../../models/deliverable.dart';
@@ -68,11 +69,13 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Course Header Banner
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: courseColor.withOpacity(0.08),
+          // Course Header Glass Banner
+          GlassContainer(
+            borderRadius: 22,
+            blur: 16,
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(18),
+            borderColor: courseColor.withOpacity(0.3),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -82,7 +85,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     const Icon(Icons.person, size: 16, color: Colors.grey),
@@ -188,13 +191,20 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        elevation: 4,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Add Deliverable form coming up next!')),
           );
         },
         icon: const Icon(Icons.add),
-        label: const Text('Add Deliverable'),
+        label: const Text(
+          'Add Deliverable',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
