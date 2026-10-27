@@ -124,3 +124,4 @@ This grants students complete autonomy over their daily view without destroying 
 * **Target Phase:** Phase 5
 * **Protocol:** RESTful HTTPS / gRPC.
 * **Architecture:** Context injection where the student's upcoming deadlines, active deliverables, and schedule constraints are formatted into structured system prompts, returning actionable schedule realignment recommendations.
+
