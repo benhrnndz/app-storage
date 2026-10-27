@@ -111,9 +111,9 @@ This grants students complete autonomy over their daily view without destroying 
 ## 5. System Integration Points (Roadmap)
 
 ### Integration 1: Google Identity Provider (OAuth 2.0)
-* **Target Phase:** Phase 3
+* **Status:** Implemented (Phase 3)
 * **Protocol:** OpenID Connect / OAuth 2.0 via Google Identity Services and Firebase Authentication.
-* **Architecture:** Decentralized token exchange returning a cryptographically signed JSON Web Token (JWT), caching session state in local secure storage.
+* **Architecture:** Decentralized token exchange returning a cryptographically signed JSON Web Token (JWT), caching session state in local secure storage. Integrated via `FirebaseAuthService` implementing the `AuthService` abstraction.
 
 ### Integration 2: Cloud Data Persistence (Firebase Firestore)
 * **Target Phase:** Phase 3 & 4
