@@ -1,5 +1,6 @@
 // lib/features/schedule/screens/schedule_screen.dart
 import 'package:flutter/material.dart';
+import '../../../core/widgets/glass_card.dart';
 import '../../../data/mock_data.dart';
 import '../../../models/course.dart';
 import '../../../models/schedule.dart';
@@ -190,103 +191,99 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 100),
                   itemCount: activeAgendaSlots.length,
                   itemBuilder: (context, index) {
                     final slot = activeAgendaSlots[index];
                     final course = _getCourseForSlot(slot);
                     final courseColor = Color(course.colorValue);
 
-                    return Card(
+                    return GlassContainer(
+                      borderRadius: 20,
+                      blur: 14,
                       margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: courseColor.withOpacity(0.4)),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Time Column
-                            Column(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Time Column
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                slot.startTime,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              Text(
+                                slot.endTime,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 16),
+                          // Vertical Divider line in card
+                          Container(
+                            width: 3,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: courseColor,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // Course details
+                          Expanded(
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  slot.startTime,
-                                  style: const TextStyle(
+                                  course.code,
+                                  style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                    color: courseColor,
+                                    fontSize: 14,
                                   ),
                                 ),
                                 Text(
-                                  slot.endTime,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade600,
+                                  course.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
                                   ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      slot.roomOrLink.contains('Online') || slot.roomOrLink.contains('Zoom')
+                                          ? Icons.videocam_outlined
+                                          : Icons.location_on_outlined,
+                                      size: 14,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        slot.roomOrLink,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade700,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                            const SizedBox(width: 16),
-                            // Vertical Divider line in card
-                            Container(
-                              width: 3,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: courseColor,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            // Course details
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    course.code,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: courseColor,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  Text(
-                                    course.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        slot.roomOrLink.contains('Online') || slot.roomOrLink.contains('Zoom')
-                                            ? Icons.videocam_outlined
-                                            : Icons.location_on_outlined,
-                                        size: 14,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          slot.roomOrLink,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade700,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     );
                   },
@@ -306,9 +303,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     final dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      color: Colors.grey.shade50,
+    return GlassContainer(
+      borderRadius: 20,
+      blur: 16,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: weekDays.map((date) {
@@ -321,19 +320,29 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               date.day == now.day;
 
           return InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             onTap: () {
               setState(() => _selectedDate = date);
             },
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
                 color: isSelected
                     ? Theme.of(context).colorScheme.primary
                     : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 border: isToday && !isSelected
                     ? Border.all(color: Theme.of(context).colorScheme.primary, width: 1.5)
+                    : null,
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        )
+                      ]
                     : null,
               ),
               child: Column(
@@ -341,7 +350,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   Text(
                     dayLabels[date.weekday - 1],
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: isSelected ? Colors.white : Colors.grey.shade600,
                     ),
@@ -350,7 +359,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   Text(
                     '${date.day}',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: isSelected ? Colors.white : Colors.black87,
                     ),
@@ -369,20 +378,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   // ==========================================
   Widget _buildTimetableSetupView() {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
       itemCount: _slots.length,
       itemBuilder: (context, index) {
         final slot = _slots[index];
         final course = _getCourseForSlot(slot);
         final courseColor = Color(course.colorValue);
 
-        return Card(
+        return GlassContainer(
+          borderRadius: 20,
+          blur: 14,
           margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
                 // Top row: Day & Time
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -458,7 +468,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ),
               ],
             ),
-          ),
         );
       },
     );
