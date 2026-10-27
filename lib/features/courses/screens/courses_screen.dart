@@ -31,6 +31,18 @@ class _CoursesScreenState extends State<CoursesScreen> {
             'My Academic Hub',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline, size: 26),
+              tooltip: 'Add Course',
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Add Course form coming up next!')),
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
           bottom: const TabBar(
             indicatorColor: Colors.blueAccent,
             tabs: [
@@ -48,14 +60,24 @@ class _CoursesScreenState extends State<CoursesScreen> {
             _buildCourseList(archivedCourses),
           ],
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Add Course form coming up next!')),
-            );
-          },
-          icon: const Icon(Icons.add),
-          label: const Text('Add Course'),
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(bottom: 84),
+          child: FloatingActionButton.extended(
+            elevation: 4,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Add Course form coming up next!')),
+              );
+            },
+            icon: const Icon(Icons.add),
+            label: const Text(
+              'Add Course',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
         ),
       ),
     );
@@ -72,7 +94,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 8, bottom: 80),
+      padding: const EdgeInsets.only(top: 10, bottom: 100),
       itemCount: courses.length,
       itemBuilder: (context, index) {
         final course = courses[index];
