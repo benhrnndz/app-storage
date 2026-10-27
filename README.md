@@ -47,8 +47,8 @@ lib/
 | **Phase 2: Domain Data Modeling** | `Course`, `Deliverable`, `ScheduleSlot` entities with unit tests | ✅ Completed |
 | **Phase 2.5: UI Prototypes** | Course cards, Deliverable lists (with GitHub/Video chips), Navigation | ✅ Completed |
 | **Phase 2.8: Schedule & Calendar Engine** | Weekly timetable, day selector, user-controlled calendar sync toggle | ✅ Completed |
-| **Phase 3: Identity & Cloud Backend** | Firebase Auth (Google Sign-In), Cloud Firestore configuration | ⏳ Next Up |
-| **Phase 4: Dynamic CRUD & Forms** | Interactive modals for adding courses, deliverables, and custom schedule slots | ⏳ Upcoming |
+| **Phase 3: Identity & Cloud Backend** | Firebase Core, Firebase Auth (Google OAuth 2.0), AuthGate, Profile Modal | ✅ Completed |
+| **Phase 4: Dynamic CRUD & Forms** | Interactive modals for adding courses, deliverables, and custom schedule slots | ⏳ Next Up |
 | **Phase 5: AI Academic Assistant** | LLM API integration with prompt engineering for schedule realignment | ⏳ Upcoming |
 
 ---
