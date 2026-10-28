@@ -48,15 +48,16 @@ lib/
 | **Phase 2.5: UI Prototypes** | Course cards, Deliverable lists (with GitHub/Video chips), Navigation | ✅ Completed |
 | **Phase 2.8: Schedule & Calendar Engine** | Weekly timetable, day selector, user-controlled calendar sync toggle | ✅ Completed |
 | **Phase 3: Identity & Cloud Backend** | Firebase Core, Firebase Auth (Google OAuth 2.0), AuthGate, Profile Modal | ✅ Completed |
-| **Phase 4: Dynamic CRUD & Forms** | Interactive modals for adding courses, deliverables, and custom schedule slots | ⏳ Next Up |
-| **Phase 5: AI Academic Assistant** | LLM API integration with prompt engineering for schedule realignment | ⏳ Upcoming |
-
+| **Phase 4: Dynamic CRUD & Forms** | Repository Pattern, Firestore/Local sync, Add Course/Deliverable/Schedule modals | ✅ Completed |
+| **Phase 5: AI Academic Assistant** | LLM API integration with prompt engineering for schedule realignment | ⏳ Next Up |
 ---
 
 ## 🧪 Testing & Verification
 The codebase is verified using automated unit and widget tests:
 - **`test/models_test.dart`**: Validates entity immutability, JSON/Map serialization (`toMap`), deserialization (`fromMap`), and computed properties.
-- **`test/widget_test.dart`**: Validates UI tree composition and navigation rendering.
+- **`test/auth_test.dart`**: Validates authentication state transitions, Google sign-in flows, and login screen rendering.
+- **`test/repository_test.dart`**: Validates dynamic CRUD operations for courses, deliverables, and class schedules.
+- **`test/widget_test.dart`**: Validates UI tree composition, navigation, and reactive streams.
 
 To execute tests:
 ```bash
