@@ -72,8 +72,9 @@ erDiagram
         enum type "activity | project | presentation"
         datetime dueDate
         boolean isCompleted
-        string repoUrl "GitHub/GitLab Repository"
-        string videoDemoUrl "YouTube/Drive/Loom Demo"
+        list links "Arbitrary URLs: GitHub, Drive, YouTube, Figma, etc."
+        string attachmentUrl "Firebase Cloud Storage Download URL"
+        string attachmentName "Original filename"
         string notes
         datetime createdAt
     }
@@ -107,6 +108,11 @@ $$\text{AgendaSlots} = \{ s \in \text{ScheduleSlots} \mid \exists c \in \text{Co
 
 1. **Course Archival**: Moving a course to "Past Courses" automatically suspends its schedule slots from populating the active calendar agenda without losing their configuration. In Timetable Settings, archived schedules are badged and separated under `ARCHIVED COURSE SCHEDULES`. Restoring a course to active status instantly restores its schedules to the calendar.
 2. **Cascading Referential Integrity**: Deleting a course performs an atomic cascade deleting all child schedule slots and deliverables from Firestore and local storage, preventing orphan entries or broken blank cards from lingering on the calendar.
+
+### 4.4 Cloud Storage & Extensible Multi-Link Submissions
+Rather than enforcing rigid, single-purpose URL boxes (e.g. only GitHub or YouTube), the coursework subsystem empowers students with complete submission flexibility:
+1. **Dynamic Link Collection**: Students can attach an arbitrary number of optional links (`List<String> links`) representing any web resource (Figma prototypes, Notion documentation, Google Drive folders, personal portfolios, code repos, or demo videos).
+2. **Binary Blob Cloud Storage**: Direct photo and file uploads (diagrams, photos of physical lab work, PDFs) are decoupled from Firestore and stored in Firebase Cloud Storage (`FirebaseStorageService`) under `users/{userId}/courses/{courseId}/attachments/`, persisting only the HTTPS download URL in Firestore. An abstract `StorageService` contract ensures mock-ability for testing and offline environments.
 
 ---
 
