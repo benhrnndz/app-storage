@@ -101,10 +101,12 @@ Every entity provides bidirectional mapping:
 * `toMap()`: Serializes Dart objects into generic `Map<String, dynamic>` structures compatible with JSON, SQLite, and Firestore.
 * `factory fromMap()`: Deserializes key-value stores back into strongly typed domain objects with null-safety fallbacks.
 
-### 4.3 User-First Calendar Synchronization Logic
-The schedule subsystem separates the raw timetable data from the active calendar display:
-$$\text{AgendaSlots} = \{ s \in \text{ScheduleSlots} \mid s.\text{dayOfWeek} = \text{selectedDay} \land s.\text{isCalendarSyncEnabled} = \text{true} \}$$
-This grants students complete autonomy over their daily view without destroying their master timetable configuration.
+### 4.3 User-First Calendar Synchronization & Lifecycle Filtering
+The schedule subsystem separates the raw timetable data from the active calendar display, taking into account course lifecycle states:
+$$\text{AgendaSlots} = \{ s \in \text{ScheduleSlots} \mid \exists c \in \text{Courses} : (c.\text{id} = s.\text{courseId} \land \neg c.\text{isArchived}) \land s.\text{dayOfWeek} = \text{selectedDay} \land s.\text{isCalendarSyncEnabled} = \text{true} \}$$
+
+1. **Course Archival**: Moving a course to "Past Courses" automatically suspends its schedule slots from populating the active calendar agenda without losing their configuration. In Timetable Settings, archived schedules are badged and separated under `ARCHIVED COURSE SCHEDULES`. Restoring a course to active status instantly restores its schedules to the calendar.
+2. **Cascading Referential Integrity**: Deleting a course performs an atomic cascade deleting all child schedule slots and deliverables from Firestore and local storage, preventing orphan entries or broken blank cards from lingering on the calendar.
 
 ---
 
