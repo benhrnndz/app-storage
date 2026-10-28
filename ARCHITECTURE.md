@@ -116,9 +116,9 @@ This grants students complete autonomy over their daily view without destroying 
 * **Architecture:** Decentralized token exchange returning a cryptographically signed JSON Web Token (JWT), caching session state in local secure storage. Integrated via `FirebaseAuthService` implementing the `AuthService` abstraction.
 
 ### Integration 2: Cloud Data Persistence (Firebase Firestore)
-* **Target Phase:** Phase 3 & 4
-* **Protocol:** HTTPS / WebSocket real-time reactive streams.
-* **Architecture:** Multi-device synchronization with offline-first persistence cache. Security rules will restrict read/write operations to authenticated user IDs (`request.auth.uid == resource.data.userId`).
+* **Status:** Implemented (Phase 4)
+* **Protocol:** HTTPS / WebSocket real-time reactive streams via `FirestoreLmsRepository`.
+* **Architecture:** Multi-device synchronization with offline-first persistence cache. Partitioned by `users/{userId}/...` subcollections ensuring complete data isolation. Adheres to the Repository Pattern allowing transparent switching between cloud Firestore and in-memory test stores.
 
 ### Integration 3: Artificial Intelligence Assistant (Google Gemini API)
 * **Target Phase:** Phase 5
