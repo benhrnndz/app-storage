@@ -20,5 +20,20 @@ void main() {
     expect(find.text('My Academic Hub'), findsOneWidget);
     expect(find.text('Courses'), findsOneWidget);
     expect(find.text('Schedule'), findsOneWidget);
+
+    // Switch to Schedule tab
+    await tester.tap(find.text('Schedule'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Class Schedule & Calendar'), findsOneWidget);
+    expect(find.text('Calendar Agenda'), findsOneWidget);
+    expect(find.text('Timetable Settings'), findsOneWidget);
+
+    // Switch to Timetable Settings
+    await tester.tap(find.text('Timetable Settings'));
+    await tester.pumpAndSettle();
+
+    // Verify Active Timetable header is present
+    expect(find.textContaining('ACTIVE TIMETABLE'), findsOneWidget);
   });
 }
