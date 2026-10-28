@@ -32,22 +32,19 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   // Selected date for the calendar agenda (defaults to today)
   DateTime _selectedDate = DateTime.now();
 
-  Course _getCourseForSlot(List<Course> courses, ScheduleSlot slot) {
-    return courses.firstWhere(
-      (c) => c.id == slot.courseId,
-      orElse: () => const Course(
-        id: 'unknown',
-        code: '???',
-        title: 'Unknown Course',
-        instructor: 'Unknown',
-        semester: '',
-      ),
-    );
+  Course? _getCourseForSlot(List<Course> courses, ScheduleSlot slot) {
+    try {
+      return courses.firstWhere((c) => c.id == slot.courseId);
+    } catch (_) {
+      return null;
+    }
   }
 
   void _openAddScheduleModal(List<Course> courses, [ScheduleSlot? slotToEdit]) {
-    final activeCourses = courses.where((c) => !c.isArchived).toList();
-    if (activeCourses.isEmpty) {
+    final availableCourses = courses
+        .where((c) => !c.isArchived || c.id == slotToEdit?.courseId)
+        .toList();
+    if (availableCourses.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please create at least one active course before adding class sessions.')),
       );
@@ -60,7 +57,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       isScrollControlled: true,
       builder: (context) {
         return AddScheduleModal(
-          availableCourses: activeCourses,
+          availableCourses: availableCourses,
           slotToEdit: slotToEdit,
           onSave: (slot) async {
             if (widget.repository != null) {
@@ -143,14 +140,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
 
     final course = _getCourseForSlot(courses, updated);
+    final courseName = course?.code ?? 'Class session';
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           duration: const Duration(seconds: 2),
           content: Text(
             updated.isCalendarSyncEnabled
-                ? '✓ Added ${course.code} to dedicated calendar'
-                : '✕ Removed ${course.code} from dedicated calendar',
+                ? '✓ Added $courseName to dedicated calendar'
+                : '✕ Removed $courseName from dedicated calendar',
           ),
         ),
       );
@@ -240,8 +238,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   Widget _buildCalendarAgendaView(List<ScheduleSlot> slots, List<Course> courses) {
     final selectedDayOfWeek = _selectedDate.weekday;
 
-    // Filter slots for the selected day, ONLY those where the student ENABLED calendar sync!
+    // Filter slots for the selected day:
+    // 1. Must belong to an active (non-archived) course
+    // 2. Must match the selected day
+    // 3. Must have calendar sync enabled by the student
     final activeAgendaSlots = slots.where((slot) {
+      final course = _getCourseForSlot(courses, slot);
+      // If course is deleted or archived, it does NOT populate the active calendar agenda
+      if (course == null || course.isArchived) {
+        return false;
+      }
       return slot.dayOfWeek == selectedDayOfWeek && slot.isCalendarSyncEnabled;
     }).toList();
 
@@ -267,7 +273,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Only classes you opted to schedule are displayed here.',
+                  'Only classes for active courses with sync enabled are displayed here.',
                   style: TextStyle(fontSize: 12, color: Colors.blue.shade900),
                 ),
               ),
@@ -292,7 +298,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Either you have no class, or sync is disabled\nunder "Timetable Settings".',
+                        'Either you have no class, the course is archived,\nor sync is disabled under "Timetable Settings".',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
                       ),
@@ -305,6 +311,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   itemBuilder: (context, index) {
                     final slot = activeAgendaSlots[index];
                     final course = _getCourseForSlot(courses, slot);
+                    if (course == null) return const SizedBox.shrink();
                     final courseColor = Color(course.colorValue);
 
                     return GestureDetector(
@@ -343,7 +350,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                       Icon(
                                         slot.roomOrLink.contains('Online') || slot.roomOrLink.contains('Zoom')
                                             ? Icons.videocam_outlined
-                                            : Icons.location_on_outlined,
+                                             : Icons.location_on_outlined,
                                         size: 14,
                                         color: Colors.grey.shade600,
                                       ),
@@ -427,7 +434,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   // VIEW 2: TIMETABLE SETUP & CALENDAR TOGGLE
   // ==========================================
   Widget _buildTimetableSetupView(List<ScheduleSlot> slots, List<Course> courses) {
-    if (slots.isEmpty) {
+    // 1. Filter out orphan slots whose courses were deleted
+    final validSlots = slots.where((slot) => _getCourseForSlot(courses, slot) != null).toList();
+
+    if (validSlots.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -442,67 +452,207 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
-      itemCount: slots.length,
-      itemBuilder: (context, index) {
-        final slot = slots[index];
-        final course = _getCourseForSlot(courses, slot);
-        final courseColor = Color(course.colorValue);
+    final activeSlots = validSlots.where((s) => !_getCourseForSlot(courses, s)!.isArchived).toList();
+    final archivedSlots = validSlots.where((s) => _getCourseForSlot(courses, s)!.isArchived).toList();
 
-        return GestureDetector(
-          onLongPress: () => _showSlotOptions(slot, courses),
-          child: GlassContainer(
-            borderRadius: 20,
-            blur: 14,
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
+      children: [
+        if (activeSlots.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8, left: 4),
+            child: Text(
+              'ACTIVE TIMETABLE (${activeSlots.length})',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade600,
+                letterSpacing: 1.1,
+              ),
+            ),
+          ),
+          ...activeSlots.map((slot) => _buildTimetableSlotTile(slot, courses, isArchived: false)),
+        ],
+
+        if (archivedSlots.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8, left: 4),
+            child: Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(color: courseColor.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
-                      child: Text(slot.dayName.toUpperCase(), style: TextStyle(color: courseColor, fontSize: 11, fontWeight: FontWeight.bold)),
-                    ),
-                    Text('${slot.startTime} - ${slot.endTime}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text('${course.code}: ${course.title}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                const SizedBox(height: 4),
-                Text('Location: ${slot.roomOrLink}', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
-                const Divider(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Schedule into dedicated calendar', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                          Text(
-                            slot.isCalendarSyncEnabled ? 'Active: Visible in your calendar agenda' : 'Disabled: Hidden from calendar agenda',
-                            style: TextStyle(fontSize: 11, color: slot.isCalendarSyncEnabled ? Colors.green.shade700 : Colors.grey.shade600),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Switch(
-                      value: slot.isCalendarSyncEnabled,
-                      activeColor: Colors.blueAccent,
-                      onChanged: (_) => _toggleCalendarSync(slot, courses),
-                    ),
-                  ],
+                Icon(Icons.archive_outlined, size: 16, color: Colors.orange.shade800),
+                const SizedBox(width: 6),
+                Text(
+                  'ARCHIVED COURSE SCHEDULES (${archivedSlots.length})',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange.shade800,
+                    letterSpacing: 1.1,
+                  ),
                 ),
               ],
             ),
           ),
-        );
-      },
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.orange.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, size: 18, color: Colors.orange.shade800),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Classes below belong to archived courses. Their calendar sync is suspended and will not appear on your calendar.',
+                    style: TextStyle(fontSize: 12, color: Colors.orange.shade900),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...archivedSlots.map((slot) => _buildTimetableSlotTile(slot, courses, isArchived: true)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTimetableSlotTile(ScheduleSlot slot, List<Course> courses, {required bool isArchived}) {
+    final course = _getCourseForSlot(courses, slot);
+    if (course == null) return const SizedBox.shrink();
+    final courseColor = Color(course.colorValue);
+
+    return GestureDetector(
+      onLongPress: () => _showSlotOptions(slot, courses),
+      child: GlassContainer(
+        borderRadius: 20,
+        blur: 14,
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        borderColor: isArchived ? Colors.orange.shade300.withOpacity(0.5) : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: (isArchived ? Colors.orange : courseColor).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        slot.dayName.toUpperCase(),
+                        style: TextStyle(
+                          color: isArchived ? Colors.orange.shade800 : courseColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    if (isArchived) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'ARCHIVED',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange.shade900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                Text(
+                  '${slot.startTime} - ${slot.endTime}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: isArchived ? Colors.grey.shade600 : Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${course.code}: ${course.title}',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: isArchived ? Colors.grey.shade700 : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Location: ${slot.roomOrLink}',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+            const Divider(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isArchived
+                            ? 'Calendar Sync: Suspended'
+                            : 'Schedule into dedicated calendar',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          color: isArchived ? Colors.orange.shade800 : Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        isArchived
+                            ? 'Archived course — hidden from calendar agenda. Unarchive course to reactivate.'
+                            : (slot.isCalendarSyncEnabled
+                                ? 'Active: Visible in your calendar agenda'
+                                : 'Disabled: Hidden from calendar agenda'),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isArchived
+                              ? Colors.grey.shade600
+                              : (slot.isCalendarSyncEnabled
+                                  ? Colors.green.shade700
+                                  : Colors.grey.shade600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!isArchived)
+                  Switch(
+                    value: slot.isCalendarSyncEnabled,
+                    activeColor: Colors.blueAccent,
+                    onChanged: (_) => _toggleCalendarSync(slot, courses),
+                  )
+                else
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(Icons.lock_clock, size: 22, color: Colors.orangeAccent),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
