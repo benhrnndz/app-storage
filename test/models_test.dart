@@ -53,6 +53,34 @@ void main() {
       expect(map['type'], 'project');
       expect(map['repoUrl'], 'https://github.com/ben/student-lms');
     });
+
+    test('Deliverable supports arbitrary links and photo attachments', () {
+      final deliverable = Deliverable(
+        id: 'd2',
+        courseId: 'c1',
+        title: 'UI Design & Architecture Notes',
+        type: DeliverableType.activity,
+        links: [
+          'https://figma.com/file/sample-board',
+          'https://notion.so/my-student-workspace',
+          'https://ben-portfolio.dev',
+        ],
+        attachmentUrl: 'https://firebasestorage.googleapis.com/.../diagram.png',
+        attachmentName: 'diagram.png',
+        createdAt: DateTime.now(),
+      );
+
+      expect(deliverable.links.length, 3);
+      expect(deliverable.isAttachmentImage, isTrue);
+      expect(deliverable.allLinks.contains('https://figma.com/file/sample-board'), isTrue);
+
+      final map = deliverable.toMap();
+      final restored = Deliverable.fromMap(map, 'd2');
+
+      expect(restored.allLinks.length, 3);
+      expect(restored.attachmentName, 'diagram.png');
+      expect(restored.isAttachmentImage, isTrue);
+    });
   });
 
   group('ScheduleSlot Model Tests', () {
