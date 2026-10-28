@@ -41,6 +41,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         return AddDeliverableModal(
           courseId: widget.course.id,
           deliverableToEdit: deliverableToEdit,
+          userId: _userId,
           onSave: (deliverable) async {
             if (widget.repository != null) {
               await widget.repository!.saveDeliverable(_userId, deliverable);
@@ -186,13 +187,16 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                       children: [
                         const Icon(Icons.person, size: 16, color: Colors.grey),
                         const SizedBox(width: 4),
-                        Text(
-                          widget.course.instructor,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey.shade700,
+                        Flexible(
+                          child: Text(
+                            widget.course.instructor,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey.shade700,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 12),
                         Text(
                           widget.course.semester,
                           style: theme.textTheme.bodySmall?.copyWith(
