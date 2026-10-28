@@ -1,5 +1,6 @@
 // lib/features/auth/widgets/auth_gate.dart
 import 'package:flutter/material.dart';
+import '../../../data/repositories/lms_repository.dart';
 import '../../../models/auth_user.dart';
 import '../../navigation/main_navigation_screen.dart';
 import '../screens/login_screen.dart';
@@ -10,8 +11,13 @@ import '../services/auth_service.dart';
 /// and MainNavigationScreen without manual imperative navigation calls.
 class AuthGate extends StatelessWidget {
   final AuthService authService;
+  final LmsRepository? repository;
 
-  const AuthGate({super.key, required this.authService});
+  const AuthGate({
+    super.key,
+    required this.authService,
+    this.repository,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +40,7 @@ class AuthGate extends StatelessWidget {
           return MainNavigationScreen(
             authService: authService,
             currentUser: user,
+            repository: repository,
           );
         }
 
