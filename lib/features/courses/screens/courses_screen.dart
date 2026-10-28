@@ -109,7 +109,13 @@ class _CoursesScreenState extends State<CoursesScreen> {
                       }
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(updated.isArchived ? 'Course archived' : 'Course marked active')),
+                          SnackBar(
+                            content: Text(
+                              updated.isArchived
+                                  ? '✓ Course archived (schedules removed from calendar)'
+                                  : '✓ Course marked active (schedules restored to calendar)',
+                            ),
+                          ),
                         );
                       }
                     },
@@ -138,7 +144,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text('Delete ${course.code}?'),
-          content: Text('Are you sure you want to delete "${course.title}"? This cannot be undone.'),
+          content: Text('Are you sure you want to delete "${course.title}"?\n\nThis will permanently delete the course along with all associated coursework and class schedules from your calendar.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -153,7 +159,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                 }
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('✓ Deleted ${course.code}')),
+                    SnackBar(content: Text('✓ Deleted ${course.code} and associated calendar schedules')),
                   );
                 }
               },
