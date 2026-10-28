@@ -64,7 +64,32 @@ class FirestoreLmsRepository implements LmsRepository {
 
   @override
   Future<void> deleteCourse(String userId, String courseId) async {
+    // 1. Delete the course document itself
     await _coursesRef(userId).doc(courseId).delete();
+
+    // 2. Cascade delete all associated schedule slots from calendar & timetable
+    try {
+      final schedulesSnapshot = await _schedulesRef(userId)
+          .where('courseId', isEqualTo: courseId)
+          .get();
+      for (final doc in schedulesSnapshot.docs) {
+        await doc.reference.delete();
+      }
+    } catch (_) {
+      // Best-effort cascade cleanup
+    }
+
+    // 3. Cascade delete all associated deliverables/coursework
+    try {
+      final deliverablesSnapshot = await _deliverablesRef(userId)
+          .where('courseId', isEqualTo: courseId)
+          .get();
+      for (final doc in deliverablesSnapshot.docs) {
+        await doc.reference.delete();
+      }
+    } catch (_) {
+      // Best-effort cascade cleanup
+    }
   }
 
   // --- DELIVERABLES CRUD ---
@@ -151,8 +176,19 @@ class LocalLmsRepository implements LmsRepository {
 
   @override
   Future<void> deleteCourse(String userId, String courseId) async {
+    // 1. Delete course
     _courses.removeWhere((c) => c.id == courseId);
+
+    // 2. Cascade delete associated schedule slots from timetable & calendar
+    _schedules.removeWhere((s) => s.courseId == courseId);
+
+    // 3. Cascade delete associated deliverables
+    _deliverables.removeWhere((d) => d.courseId == courseId);
+
+    // Broadcast updates across all active streams
     _coursesController.add(List.unmodifiable(_courses));
+    _schedulesController.add(List.unmodifiable(_schedules));
+    _deliverablesController.add(List.unmodifiable(_deliverables));
   }
 
   // --- DELIVERABLES ---
