@@ -28,8 +28,29 @@ class CoursesScreen extends StatefulWidget {
   State<CoursesScreen> createState() => _CoursesScreenState();
 }
 
-class _CoursesScreenState extends State<CoursesScreen> {
+class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   String get _userId => widget.currentUser?.uid ?? 'local_user';
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_handleTabSelection);
+  }
+
+  void _handleTabSelection() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabSelection);
+    _tabController.dispose();
+    super.dispose();
+  }
 
   void _openAddCourseModal([Course? courseToEdit]) {
     showModalBottomSheet(
@@ -310,67 +331,69 @@ class _CoursesScreenState extends State<CoursesScreen> {
             final activeCourses = courses.where((c) => !c.isArchived).toList();
             final archivedCourses = courses.where((c) => c.isArchived).toList();
 
-            return DefaultTabController(
-              length: 2,
-              child: Scaffold(
-                appBar: AppBar(
-                  title: const Text(
-                    'My Academic Hub',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  actions: [
-                    IconButton(
-                      icon: CircleAvatar(
-                        radius: 14,
-                        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.12),
-                        child: Text(
-                          widget.currentUser != null && widget.currentUser!.displayName.isNotEmpty
-                              ? widget.currentUser!.displayName[0].toUpperCase()
-                              : 'B',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text(
+                  'My Academic Hub',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                actions: [
+                  IconButton(
+                    icon: CircleAvatar(
+                      radius: 14,
+                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                      child: Text(
+                        widget.currentUser != null && widget.currentUser!.displayName.isNotEmpty
+                            ? widget.currentUser!.displayName[0].toUpperCase()
+                            : 'B',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
-                      tooltip: 'Student Profile & Cloud Sync',
-                      onPressed: _showProfileModal,
                     ),
+                    tooltip: 'Student Profile & Cloud Sync',
+                    onPressed: _showProfileModal,
+                  ),
+                  if (_tabController.index == 0)
                     IconButton(
                       icon: const Icon(Icons.add_circle_outline, size: 24),
                       tooltip: 'Add Course',
                       onPressed: () => _openAddCourseModal(),
                     ),
-                    const SizedBox(width: 8),
+                  const SizedBox(width: 8),
+                ],
+                bottom: TabBar(
+                  controller: _tabController,
+                  indicatorColor: Colors.blueAccent,
+                  tabs: const [
+                    Tab(icon: Icon(Icons.school), text: 'Active Courses'),
+                    Tab(icon: Icon(Icons.history_edu), text: 'Past Courses'),
                   ],
-                  bottom: const TabBar(
-                    indicatorColor: Colors.blueAccent,
-                    tabs: [
-                      Tab(icon: Icon(Icons.school), text: 'Active Courses'),
-                      Tab(icon: Icon(Icons.history_edu), text: 'Past Courses'),
-                    ],
-                  ),
-                ),
-                body: TabBarView(
-                  children: [
-                    _buildCourseList(activeCourses, allDeliverables),
-                    _buildCourseList(archivedCourses, allDeliverables),
-                  ],
-                ),
-                floatingActionButton: Padding(
-                  padding: const EdgeInsets.only(bottom: 84),
-                  child: FloatingActionButton.extended(
-                    elevation: 4,
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                    onPressed: () => _openAddCourseModal(),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Course', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
                 ),
               ),
+              body: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildCourseList(activeCourses, allDeliverables, isArchived: false),
+                  _buildCourseList(archivedCourses, allDeliverables, isArchived: true),
+                ],
+              ),
+              floatingActionButton: _tabController.index == 0
+                  ? Padding(
+                      padding: const EdgeInsets.only(bottom: 84),
+                      child: FloatingActionButton.extended(
+                        elevation: 4,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                        onPressed: () => _openAddCourseModal(),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Course', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    )
+                  : null,
             );
           },
         );
@@ -378,17 +401,25 @@ class _CoursesScreenState extends State<CoursesScreen> {
     );
   }
 
-  Widget _buildCourseList(List<Course> courses, List<Deliverable> allDeliverables) {
+  Widget _buildCourseList(List<Course> courses, List<Deliverable> allDeliverables, {required bool isArchived}) {
     if (courses.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.folder_open, size: 52, color: Colors.grey.shade400),
+            Icon(isArchived ? Icons.history_edu : Icons.folder_open, size: 52, color: Colors.grey.shade400),
             const SizedBox(height: 10),
-            const Text('No courses in this section.', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+            Text(
+              isArchived ? 'No past courses yet.' : 'No courses in this section.',
+              style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 4),
-            const Text('Tap "+ Add Course" to register your enrolled subjects.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(
+              isArchived
+                  ? 'Completed or archived courses will appear here in your academic portfolio.'
+                  : 'Tap "+ Add Course" to register your enrolled subjects.',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
           ],
         ),
       );
