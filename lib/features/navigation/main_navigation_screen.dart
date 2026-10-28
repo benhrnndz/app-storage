@@ -1,6 +1,7 @@
 // lib/features/navigation/main_navigation_screen.dart
 import 'package:flutter/material.dart';
 import '../../core/widgets/glass_card.dart';
+import '../../data/repositories/lms_repository.dart';
 import '../../models/auth_user.dart';
 import '../auth/services/auth_service.dart';
 import '../courses/screens/courses_screen.dart';
@@ -11,11 +12,13 @@ import '../schedule/screens/schedule_screen.dart';
 class MainNavigationScreen extends StatefulWidget {
   final AuthService? authService;
   final AuthUser? currentUser;
+  final LmsRepository? repository;
 
   const MainNavigationScreen({
     super.key,
     this.authService,
     this.currentUser,
+    this.repository,
   });
 
   @override
@@ -28,13 +31,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // The pages hosted in the bottom navigation
+    // The pages hosted in the bottom navigation with full real-time CRUD
     final screens = [
       CoursesScreen(
         authService: widget.authService,
         currentUser: widget.currentUser,
+        repository: widget.repository,
       ),
-      const ScheduleScreen(),
+      ScheduleScreen(
+        repository: widget.repository,
+        userId: widget.currentUser?.uid,
+      ),
     ];
 
     return Scaffold(
