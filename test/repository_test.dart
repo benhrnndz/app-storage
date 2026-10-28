@@ -135,6 +135,33 @@ void main() {
       expect(deliverables.any((d) => d.id == 'test_d_1'), isFalse);
     });
 
+    test('Deliverable CRUD: supports multiple arbitrary links and photo attachments', () async {
+      final multiLinkDeliverable = Deliverable(
+        id: 'test_d_links',
+        courseId: 'c1',
+        title: 'Full Stack Deliverable With Attachments',
+        type: DeliverableType.project,
+        links: [
+          'https://figma.com/file/123/mockups',
+          'https://notion.so/student/notes',
+          'https://youtu.be/demo-walkthrough',
+          'https://custom-student-portfolio.org',
+        ],
+        attachmentUrl: 'https://firebasestorage.googleapis.com/v0/b/app.appspot.com/o/photo.png',
+        attachmentName: 'photo.png',
+        createdAt: DateTime.now(),
+      );
+
+      await repo.saveDeliverable(testUserId, multiLinkDeliverable);
+      final deliverables = await repo.watchDeliverables(testUserId).first;
+      final retrieved = deliverables.firstWhere((d) => d.id == 'test_d_links');
+
+      expect(retrieved.links.length, 4);
+      expect(retrieved.allLinks.contains('https://figma.com/file/123/mockups'), isTrue);
+      expect(retrieved.attachmentName, 'photo.png');
+      expect(retrieved.isAttachmentImage, isTrue);
+    });
+
     test('Schedule Slot CRUD: can add, toggle sync, and delete schedule slot', () async {
       const newSlot = ScheduleSlot(
         id: 'test_s_1',
