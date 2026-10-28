@@ -2,21 +2,29 @@
 import 'package:flutter/material.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../data/mock_data.dart';
+import '../../../data/repositories/lms_repository.dart';
 import '../../../models/course.dart';
 import '../../../models/schedule.dart';
+import '../widgets/add_schedule_modal.dart';
 
 /// Screen allowing students to manage their weekly class timetable
 /// and view their dedicated calendar agenda based on their sync preferences.
 class ScheduleScreen extends StatefulWidget {
-  const ScheduleScreen({super.key});
+  final LmsRepository? repository;
+  final String? userId;
+
+  const ScheduleScreen({
+    super.key,
+    this.repository,
+    this.userId,
+  });
 
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
-  // Local mutable copy of schedule slots so the user can toggle calendar sync
-  late List<ScheduleSlot> _slots;
+  String get _userId => widget.userId ?? 'local_user';
 
   // 0 = Calendar Agenda View, 1 = Timetable Setup View
   int _viewMode = 0;
@@ -24,15 +32,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   // Selected date for the calendar agenda (defaults to today)
   DateTime _selectedDate = DateTime.now();
 
-  @override
-  void initState() {
-    super.initState();
-    _slots = List.from(mockSchedules);
-  }
-
-  /// Finds the Course object associated with a ScheduleSlot via its courseId foreign key.
-  Course _getCourseForSlot(ScheduleSlot slot) {
-    return mockCourses.firstWhere(
+  Course _getCourseForSlot(List<Course> courses, ScheduleSlot slot) {
+    return courses.firstWhere(
       (c) => c.id == slot.courseId,
       orElse: () => const Course(
         id: 'unknown',
@@ -44,91 +45,203 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  /// Toggles the student's preference: should this class schedule into the dedicated calendar?
-  void _toggleCalendarSync(int index) {
-    setState(() {
-      final current = _slots[index];
-      _slots[index] = ScheduleSlot(
-        id: current.id,
-        courseId: current.courseId,
-        dayOfWeek: current.dayOfWeek,
-        startTime: current.startTime,
-        endTime: current.endTime,
-        roomOrLink: current.roomOrLink,
-        isCalendarSyncEnabled: !current.isCalendarSyncEnabled,
+  void _openAddScheduleModal(List<Course> courses, [ScheduleSlot? slotToEdit]) {
+    final activeCourses = courses.where((c) => !c.isArchived).toList();
+    if (activeCourses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please create at least one active course before adding class sessions.')),
       );
-    });
+      return;
+    }
 
-    final updated = _slots[index];
-    final course = _getCourseForSlot(updated);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        duration: const Duration(seconds: 2),
-        content: Text(
-          updated.isCalendarSyncEnabled
-              ? '✓ Added ${course.code} to your dedicated calendar'
-              : '✕ Removed ${course.code} from your dedicated calendar',
-        ),
-      ),
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return AddScheduleModal(
+          availableCourses: activeCourses,
+          slotToEdit: slotToEdit,
+          onSave: (slot) async {
+            if (widget.repository != null) {
+              await widget.repository!.saveScheduleSlot(_userId, slot);
+            }
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Colors.green.shade700,
+                  content: Text(slotToEdit != null ? '✓ Schedule updated' : '✓ Added class session'),
+                ),
+              );
+            }
+          },
+        );
+      },
     );
+  }
+
+  void _showSlotOptions(ScheduleSlot slot, List<Course> courses) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: GlassContainer(
+              borderRadius: 24,
+              blur: 20,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.edit_outlined, color: Colors.blueAccent),
+                    title: const Text('Edit Class Slot', style: TextStyle(fontWeight: FontWeight.w600)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _openAddScheduleModal(courses, slot);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                    title: const Text('Delete Class Slot', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      if (widget.repository != null) {
+                        await widget.repository!.deleteScheduleSlot(_userId, slot.id);
+                      }
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('✓ Removed class slot')),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _toggleCalendarSync(ScheduleSlot slot, List<Course> courses) async {
+    final updated = ScheduleSlot(
+      id: slot.id,
+      courseId: slot.courseId,
+      dayOfWeek: slot.dayOfWeek,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      roomOrLink: slot.roomOrLink,
+      isCalendarSyncEnabled: !slot.isCalendarSyncEnabled,
+    );
+
+    if (widget.repository != null) {
+      await widget.repository!.saveScheduleSlot(_userId, updated);
+    }
+
+    final course = _getCourseForSlot(courses, updated);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 2),
+          content: Text(
+            updated.isCalendarSyncEnabled
+                ? '✓ Added ${course.code} to dedicated calendar'
+                : '✕ Removed ${course.code} from dedicated calendar',
+          ),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Class Schedule & Calendar',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: Column(
-        children: [
-          // View Switcher: "Calendar Agenda" vs "Timetable Settings"
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: SegmentedButton<int>(
-              segments: const [
-                ButtonSegment(
-                  value: 0,
-                  label: Text('Calendar Agenda'),
-                  icon: Icon(Icons.calendar_month),
-                ),
-                ButtonSegment(
-                  value: 1,
-                  label: Text('Timetable Settings'),
-                  icon: Icon(Icons.tune),
-                ),
-              ],
-              selected: {_viewMode},
-              onSelectionChanged: (newSelection) {
-                setState(() => _viewMode = newSelection.first);
-              },
-            ),
-          ),
+    final coursesStream = widget.repository != null
+        ? widget.repository!.watchCourses(_userId)
+        : Stream.value(mockCourses);
 
-          const Divider(height: 1),
+    final schedulesStream = widget.repository != null
+        ? widget.repository!.watchSchedules(_userId)
+        : Stream.value(mockSchedules);
 
-          // Main View Content
-          Expanded(
-            child: _viewMode == 0
-                ? _buildCalendarAgendaView()
-                : _buildTimetableSetupView(),
-          ),
-        ],
-      ),
+    return StreamBuilder<List<Course>>(
+      stream: coursesStream,
+      builder: (context, courseSnapshot) {
+        final courses = courseSnapshot.data ?? mockCourses;
+
+        return StreamBuilder<List<ScheduleSlot>>(
+          stream: schedulesStream,
+          builder: (context, scheduleSnapshot) {
+            final slots = scheduleSnapshot.data ?? mockSchedules;
+
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text(
+                  'Class Schedule & Calendar',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline, size: 24),
+                    tooltip: 'Add Class Session',
+                    onPressed: () => _openAddScheduleModal(courses),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
+              body: Column(
+                children: [
+                  // View Switcher: "Calendar Agenda" vs "Timetable Settings"
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: SegmentedButton<int>(
+                      segments: const [
+                        ButtonSegment(
+                          value: 0,
+                          label: Text('Calendar Agenda'),
+                          icon: Icon(Icons.calendar_month),
+                        ),
+                        ButtonSegment(
+                          value: 1,
+                          label: Text('Timetable Settings'),
+                          icon: Icon(Icons.tune),
+                        ),
+                      ],
+                      selected: {_viewMode},
+                      onSelectionChanged: (newSelection) {
+                        setState(() => _viewMode = newSelection.first);
+                      },
+                    ),
+                  ),
+
+                  const Divider(height: 1),
+
+                  // Main View Content
+                  Expanded(
+                    child: _viewMode == 0
+                        ? _buildCalendarAgendaView(slots, courses)
+                        : _buildTimetableSetupView(slots, courses),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
   // ==========================================
   // VIEW 1: DEDICATED CALENDAR AGENDA
   // ==========================================
-  Widget _buildCalendarAgendaView() {
-    // Dart's DateTime.weekday: 1 = Monday, 7 = Sunday
+  Widget _buildCalendarAgendaView(List<ScheduleSlot> slots, List<Course> courses) {
     final selectedDayOfWeek = _selectedDate.weekday;
 
-    // Filter slots for the selected day, but ONLY those where the user ENABLED calendar sync!
-    final activeAgendaSlots = _slots.where((slot) {
+    // Filter slots for the selected day, ONLY those where the student ENABLED calendar sync!
+    final activeAgendaSlots = slots.where((slot) {
       return slot.dayOfWeek == selectedDayOfWeek && slot.isCalendarSyncEnabled;
     }).toList();
 
@@ -145,7 +258,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.blue.shade100),
           ),
           child: Row(
@@ -175,11 +288,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       const SizedBox(height: 12),
                       Text(
                         'No scheduled classes for this day.',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade700,
-                        ),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -195,95 +304,60 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   itemCount: activeAgendaSlots.length,
                   itemBuilder: (context, index) {
                     final slot = activeAgendaSlots[index];
-                    final course = _getCourseForSlot(slot);
+                    final course = _getCourseForSlot(courses, slot);
                     final courseColor = Color(course.colorValue);
 
-                    return GlassContainer(
-                      borderRadius: 20,
-                      blur: 14,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Time Column
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                slot.startTime,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              Text(
-                                slot.endTime,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(width: 16),
-                          // Vertical Divider line in card
-                          Container(
-                            width: 3,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: courseColor,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          // Course details
-                          Expanded(
-                            child: Column(
+                    return GestureDetector(
+                      onLongPress: () => _showSlotOptions(slot, courses),
+                      child: GlassContainer(
+                        borderRadius: 20,
+                        blur: 14,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  course.code,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: courseColor,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  course.title,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      slot.roomOrLink.contains('Online') || slot.roomOrLink.contains('Zoom')
-                                          ? Icons.videocam_outlined
-                                          : Icons.location_on_outlined,
-                                      size: 14,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        slot.roomOrLink,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey.shade700,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                Text(slot.startTime, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                Text(slot.endTime, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                               ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 16),
+                            Container(
+                              width: 3,
+                              height: 48,
+                              decoration: BoxDecoration(color: courseColor, borderRadius: BorderRadius.circular(2)),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(course.code, style: TextStyle(fontWeight: FontWeight.bold, color: courseColor, fontSize: 14)),
+                                  Text(course.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        slot.roomOrLink.contains('Online') || slot.roomOrLink.contains('Zoom')
+                                            ? Icons.videocam_outlined
+                                            : Icons.location_on_outlined,
+                                        size: 14,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(slot.roomOrLink, style: TextStyle(fontSize: 12, color: Colors.grey.shade700), overflow: TextOverflow.ellipsis),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -293,14 +367,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  /// Horizontal scrolling bar for picking any day of the current week.
   Widget _buildWeekDateStrip() {
     final now = DateTime.now();
-    // Find the Monday of current week
     final monday = now.subtract(Duration(days: now.weekday - 1));
-
     final weekDays = List.generate(7, (i) => monday.add(Duration(days: i)));
-
     final dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     return GlassContainer(
@@ -315,54 +385,34 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               date.month == _selectedDate.month &&
               date.day == _selectedDate.day;
 
-          final isToday = date.year == now.year &&
-              date.month == now.month &&
-              date.day == now.day;
+          final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
 
           return InkWell(
             borderRadius: BorderRadius.circular(16),
-            onTap: () {
-              setState(() => _selectedDate = date);
-            },
+            onTap: () => setState(() => _selectedDate = date),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? Theme.of(context).colorScheme.primary
-                    : Colors.transparent,
+                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
                 borderRadius: BorderRadius.circular(16),
                 border: isToday && !isSelected
                     ? Border.all(color: Theme.of(context).colorScheme.primary, width: 1.5)
                     : null,
                 boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        )
-                      ]
+                    ? [BoxShadow(color: Theme.of(context).colorScheme.primary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))]
                     : null,
               ),
               child: Column(
                 children: [
                   Text(
                     dayLabels[date.weekday - 1],
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isSelected ? Colors.white : Colors.grey.shade600),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${date.day}',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : Colors.black87,
-                    ),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.black87),
                   ),
                 ],
               ),
@@ -376,64 +426,56 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   // ==========================================
   // VIEW 2: TIMETABLE SETUP & CALENDAR TOGGLE
   // ==========================================
-  Widget _buildTimetableSetupView() {
+  Widget _buildTimetableSetupView(List<ScheduleSlot> slots, List<Course> courses) {
+    if (slots.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.calendar_today, size: 52, color: Colors.grey.shade400),
+            const SizedBox(height: 10),
+            const Text('No class sessions created yet.', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            const Text('Tap "+" at the top to add recurring class hours.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
-      itemCount: _slots.length,
+      itemCount: slots.length,
       itemBuilder: (context, index) {
-        final slot = _slots[index];
-        final course = _getCourseForSlot(slot);
+        final slot = slots[index];
+        final course = _getCourseForSlot(courses, slot);
         final courseColor = Color(course.colorValue);
 
-        return GlassContainer(
-          borderRadius: 20,
-          blur: 14,
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-                // Top row: Day & Time
+        return GestureDetector(
+          onLongPress: () => _showSlotOptions(slot, courses),
+          child: GlassContainer(
+            borderRadius: 20,
+            blur: 14,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: courseColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        slot.dayName.toUpperCase(),
-                        style: TextStyle(
-                          color: courseColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      decoration: BoxDecoration(color: courseColor.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
+                      child: Text(slot.dayName.toUpperCase(), style: TextStyle(color: courseColor, fontSize: 11, fontWeight: FontWeight.bold)),
                     ),
-                    Text(
-                      '${slot.startTime} - ${slot.endTime}',
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                    ),
+                    Text('${slot.startTime} - ${slot.endTime}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                   ],
                 ),
                 const SizedBox(height: 8),
-
-                // Course details
-                Text(
-                  '${course.code}: ${course.title}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                ),
+                Text('${course.code}: ${course.title}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 const SizedBox(height: 4),
-                Text(
-                  'Location: ${slot.roomOrLink}',
-                  style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
-                ),
-
+                Text('Location: ${slot.roomOrLink}', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
                 const Divider(height: 20),
-
-                // The User-First Toggle: Schedule into calendar?
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -441,20 +483,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Schedule into dedicated calendar',
-                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                          ),
+                          const Text('Schedule into dedicated calendar', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                           Text(
-                            slot.isCalendarSyncEnabled
-                                ? 'Active: Will show up in your calendar agenda'
-                                : 'Disabled: Hidden from calendar agenda',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: slot.isCalendarSyncEnabled
-                                  ? Colors.green.shade700
-                                  : Colors.grey.shade600,
-                            ),
+                            slot.isCalendarSyncEnabled ? 'Active: Visible in your calendar agenda' : 'Disabled: Hidden from calendar agenda',
+                            style: TextStyle(fontSize: 11, color: slot.isCalendarSyncEnabled ? Colors.green.shade700 : Colors.grey.shade600),
                           ),
                         ],
                       ),
@@ -462,15 +494,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     Switch(
                       value: slot.isCalendarSyncEnabled,
                       activeColor: Colors.blueAccent,
-                      onChanged: (_) => _toggleCalendarSync(index),
+                      onChanged: (_) => _toggleCalendarSync(slot, courses),
                     ),
                   ],
                 ),
               ],
             ),
+          ),
         );
       },
     );
   }
 }
-
