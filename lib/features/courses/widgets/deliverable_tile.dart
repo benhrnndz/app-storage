@@ -1,9 +1,12 @@
 // lib/features/courses/widgets/deliverable_tile.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../models/deliverable.dart';
 
-/// An iOS glassmorphic card displaying a single deliverable (Activity, Project, or Presentation).
+/// An iOS glassmorphic card displaying a single deliverable (Activity, Project, or Presentation),
+/// with photo/file attachments and dynamic arbitrary links.
 class DeliverableTile extends StatelessWidget {
   final Deliverable deliverable;
   final ValueChanged<bool?> onStatusChanged;
@@ -40,10 +43,113 @@ class DeliverableTile extends StatelessWidget {
     }
   }
 
+  Future<void> _handleLinkTap(BuildContext context, String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri != null && await canLaunchUrl(uri)) {
+      try {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      } catch (_) {}
+    }
+
+    // Fallback: copy to clipboard
+    await Clipboard.setData(ClipboardData(text: url));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 2),
+          content: Text('✓ Copied link: $url'),
+        ),
+      );
+    }
+  }
+
+  Map<String, dynamic> _getLinkStyle(String url) {
+    final lower = url.toLowerCase();
+    if (lower.contains('github.com') || lower.contains('gitlab.com')) {
+      return {'icon': Icons.code, 'label': 'GitHub', 'color': Colors.blueAccent};
+    } else if (lower.contains('youtube.com') || lower.contains('youtu.be') || lower.contains('loom.com')) {
+      return {'icon': Icons.play_circle_outline, 'label': 'Video Demo', 'color': Colors.redAccent};
+    } else if (lower.contains('drive.google.com') || lower.contains('docs.google.com')) {
+      return {'icon': Icons.cloud_outlined, 'label': 'Google Drive', 'color': Colors.green.shade700};
+    } else if (lower.contains('figma.com')) {
+      return {'icon': Icons.brush_outlined, 'label': 'Figma', 'color': Colors.deepPurpleAccent};
+    } else if (lower.contains('notion.so') || lower.contains('notion.site')) {
+      return {'icon': Icons.description_outlined, 'label': 'Notion', 'color': Colors.teal};
+    }
+
+    // Generic link: extract hostname if possible
+    String label = 'Link';
+    try {
+      final host = Uri.parse(url).host.replaceFirst('www.', '');
+      if (host.isNotEmpty) label = host;
+    } catch (_) {}
+
+    return {'icon': Icons.link, 'label': label, 'color': Colors.indigoAccent};
+  }
+
+  void _showImagePreviewDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: GlassContainer(
+          borderRadius: 24,
+          blur: 24,
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      deliverable.attachmentName ?? 'Attached Photo',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Flexible(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    deliverable.attachmentUrl!,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return const Padding(
+                        padding: EdgeInsets.all(40),
+                        child: CircularProgressIndicator(),
+                      );
+                    },
+                    errorBuilder: (_, __, ___) => const Padding(
+                      padding: EdgeInsets.all(28),
+                      child: Text('Unable to display photo preview.'),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final typeColor = _getTypeColor(deliverable.type);
+    final allLinks = deliverable.allLinks;
 
     return GlassContainer(
       borderRadius: 18,
@@ -113,9 +219,97 @@ class DeliverableTile extends StatelessWidget {
             ),
           ],
 
+          // Uploaded Photo / File Attachment Display
+          if (deliverable.attachmentUrl != null && deliverable.attachmentUrl!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            if (deliverable.isAttachmentImage)
+              GestureDetector(
+                onTap: () => _showImagePreviewDialog(context),
+                child: Container(
+                  height: 120,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.network(
+                          deliverable.attachmentUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Colors.grey.shade100,
+                            alignment: Alignment.center,
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.image, size: 20, color: Colors.grey),
+                                SizedBox(width: 6),
+                                Text('Photo attached (tap to view)', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 6,
+                          right: 6,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.65),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.zoom_in, color: Colors.white, size: 13),
+                                SizedBox(width: 4),
+                                Text('Preview', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else
+              // Document / File pill
+              InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () => _handleLinkTap(context, deliverable.attachmentUrl!),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.blue.withOpacity(0.18)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.insert_drive_file_outlined, size: 18, color: Colors.blueAccent),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          deliverable.attachmentName ?? 'Attached Document',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueAccent),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(Icons.open_in_new, size: 14, color: Colors.blueAccent),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+
           const SizedBox(height: 10),
 
-          // Bottom action row: Due Date + Repo & Video buttons
+          // Bottom action row: Due Date + Extensible Resource Links
           Wrap(
             spacing: 8,
             runSpacing: 6,
@@ -141,35 +335,40 @@ class DeliverableTile extends StatelessWidget {
                   ),
                 ),
 
-              // GitHub Repository Link Button
-              if (deliverable.repoUrl != null && deliverable.repoUrl!.isNotEmpty)
-                ActionChip(
-                  elevation: 0,
-                  side: BorderSide(color: Colors.blue.withOpacity(0.2)),
-                  backgroundColor: Colors.blue.withOpacity(0.08),
-                  avatar: const Icon(Icons.code, size: 14, color: Colors.blueAccent),
-                  label: const Text('Repository', style: TextStyle(fontSize: 11, color: Colors.blueAccent, fontWeight: FontWeight.w600)),
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                  onPressed: onOpenRepo,
-                ),
-
-              // Video Demo Link Button
-              if (deliverable.videoDemoUrl != null && deliverable.videoDemoUrl!.isNotEmpty)
-                ActionChip(
-                  elevation: 0,
-                  side: BorderSide(color: Colors.red.withOpacity(0.2)),
-                  backgroundColor: Colors.red.withOpacity(0.08),
-                  avatar: const Icon(Icons.play_circle_outline, size: 14, color: Colors.redAccent),
-                  label: const Text('Video Demo', style: TextStyle(fontSize: 11, color: Colors.redAccent, fontWeight: FontWeight.w600)),
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                  onPressed: onOpenVideo,
-                ),
+              // Dynamic user links (GitHub, Drive, YouTube, Figma, Notion, etc.)
+              for (final link in allLinks)
+                _buildLinkChip(context, link),
             ],
           ),
         ],
       ),
     );
   }
+
+  Widget _buildLinkChip(BuildContext context, String url) {
+    final style = _getLinkStyle(url);
+    final icon = style['icon'] as IconData;
+    final label = style['label'] as String;
+    final color = style['color'] as Color;
+
+    return ActionChip(
+      elevation: 0,
+      side: BorderSide(color: color.withOpacity(0.2)),
+      backgroundColor: color.withOpacity(0.08),
+      avatar: Icon(icon, size: 14, color: color),
+      label: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 150),
+        child: Text(
+          label,
+          style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+      onPressed: () => _handleLinkTap(context, url),
+    );
+  }
 }
+
