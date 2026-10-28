@@ -231,7 +231,7 @@ class _AddCourseModalState extends State<AddCourseModal> {
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Archive Course (Past Semester)'),
-                    subtitle: const Text('Moves this course to the Past Courses tab'),
+                    subtitle: const Text('Moves course to Past Courses and suspends schedule from calendar'),
                     value: _isArchived,
                     onChanged: (val) => setState(() => _isArchived = val),
                   ),
