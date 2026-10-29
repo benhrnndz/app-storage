@@ -2,7 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/widgets/bouncy_tap.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/satisfying_checkbox.dart';
 import '../../../models/deliverable.dart';
 
 /// An iOS glassmorphic card displaying a single deliverable (Activity, Project, or Presentation),
@@ -188,26 +190,24 @@ class DeliverableTile extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              // iOS-styled Checkbox to mark complete/incomplete
-              Transform.scale(
-                scale: 0.95,
-                child: Checkbox(
-                  value: deliverable.isCompleted,
-                  onChanged: onStatusChanged,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                ),
+              // Spring-animated checkbox following Emil Kowalski's physics
+              SatisfyingCheckbox(
+                value: deliverable.isCompleted,
+                onChanged: onStatusChanged,
               ),
             ],
           ),
 
-          // Title
-          Text(
-            deliverable.title,
-            style: theme.textTheme.titleSmall?.copyWith(
+          // Title with smooth strikethrough and opacity transition
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            style: theme.textTheme.titleSmall!.copyWith(
               fontWeight: FontWeight.bold,
-              decoration: deliverable.isCompleted ? TextDecoration.lineThrough : null,
-              color: deliverable.isCompleted ? Colors.grey : null,
+              decoration: deliverable.isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
+              color: deliverable.isCompleted ? Colors.grey.shade500 : null,
             ),
+            child: Text(deliverable.title),
           ),
 
           // Notes if available
@@ -351,23 +351,26 @@ class DeliverableTile extends StatelessWidget {
     final label = style['label'] as String;
     final color = style['color'] as Color;
 
-    return ActionChip(
-      elevation: 0,
-      side: BorderSide(color: color.withOpacity(0.2)),
-      backgroundColor: color.withOpacity(0.08),
-      avatar: Icon(icon, size: 14, color: color),
-      label: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 150),
-        child: Text(
-          label,
-          style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+    return BouncyTap(
+      onTap: () => _handleLinkTap(context, url),
+      child: ActionChip(
+        elevation: 0,
+        side: BorderSide(color: color.withOpacity(0.2)),
+        backgroundColor: color.withOpacity(0.08),
+        avatar: Icon(icon, size: 14, color: color),
+        label: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 150),
+          child: Text(
+            label,
+            style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
+        onPressed: () => _handleLinkTap(context, url),
       ),
-      padding: EdgeInsets.zero,
-      visualDensity: VisualDensity.compact,
-      onPressed: () => _handleLinkTap(context, url),
     );
   }
 }
