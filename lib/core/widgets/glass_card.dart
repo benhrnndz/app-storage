@@ -1,6 +1,7 @@
 // lib/core/widgets/glass_card.dart
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'bouncy_tap.dart';
 
 /// An iOS-inspired frosted glass container utilizing BackdropFilter,
 /// soft translucency, delicate highlight borders, and rounded corners.
@@ -18,7 +19,7 @@ class GlassContainer extends StatelessWidget {
     super.key,
     required this.child,
     this.borderRadius = 20,
-    this.blur = 15,
+    this.blur = 16,
     this.color,
     this.borderColor,
     this.padding,
@@ -30,17 +31,17 @@ class GlassContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Translucent glass fill
+    // Translucent glass fill with specular clarity
     final glassColor = color ??
         (isDark
-            ? Colors.black.withOpacity(0.35)
-            : Colors.white.withOpacity(0.72));
+            ? const Color(0xFF131826).withOpacity(0.62)
+            : Colors.white.withOpacity(0.78));
 
     // Delicate glass refraction border
     final glassBorder = borderColor ??
         (isDark
-            ? Colors.white.withOpacity(0.12)
-            : Colors.white.withOpacity(0.8));
+            ? Colors.white.withOpacity(0.15)
+            : Colors.white.withOpacity(0.85));
 
     Widget content = Container(
       padding: padding,
@@ -53,9 +54,14 @@ class GlassContainer extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: Colors.black.withOpacity(isDark ? 0.35 : 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: (isDark ? Colors.blueAccent : Colors.indigoAccent).withOpacity(isDark ? 0.05 : 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -63,13 +69,9 @@ class GlassContainer extends StatelessWidget {
     );
 
     if (onTap != null) {
-      content = Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(borderRadius),
-          child: content,
-        ),
+      content = BouncyTap(
+        onTap: onTap,
+        child: content,
       );
     }
 
