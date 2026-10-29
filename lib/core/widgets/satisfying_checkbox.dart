@@ -108,3 +108,4 @@ class _SatisfyingCheckboxState extends State<SatisfyingCheckbox> with SingleTick
     );
   }
 }
+
