@@ -1,6 +1,9 @@
 // lib/features/courses/screens/courses_screen.dart
 import 'package:flutter/material.dart';
+import '../../../core/widgets/ambient_background.dart';
+import '../../../core/widgets/bouncy_tap.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/staggered_entrance.dart';
 import '../../../data/mock_data.dart';
 import '../../../data/repositories/lms_repository.dart';
 import '../../../models/auth_user.dart';
@@ -373,24 +376,29 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                   ],
                 ),
               ),
-              body: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildCourseList(activeCourses, allDeliverables, isArchived: false),
-                  _buildCourseList(archivedCourses, allDeliverables, isArchived: true),
-                ],
+              body: AmbientMeshBackground(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildCourseList(activeCourses, allDeliverables, isArchived: false),
+                    _buildCourseList(archivedCourses, allDeliverables, isArchived: true),
+                  ],
+                ),
               ),
               floatingActionButton: _tabController.index == 0
                   ? Padding(
                       padding: const EdgeInsets.only(bottom: 84),
-                      child: FloatingActionButton.extended(
-                        elevation: 4,
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                        onPressed: () => _openAddCourseModal(),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add Course', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: BouncyTap(
+                        onTap: () => _openAddCourseModal(),
+                        child: FloatingActionButton.extended(
+                          elevation: 4,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                          onPressed: () => _openAddCourseModal(),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Add Course', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
                       ),
                     )
                   : null,
@@ -432,23 +440,26 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
         final course = courses[index];
         final deliverableCount = allDeliverables.where((d) => d.courseId == course.id).length;
 
-        return GestureDetector(
-          onLongPress: () => _showCourseActions(course),
-          child: CourseCard(
-            course: course,
-            deliverableCount: deliverableCount,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CourseDetailsScreen(
-                    course: course,
-                    repository: widget.repository,
-                    userId: _userId,
+        return StaggeredEntrance(
+          index: index,
+          child: GestureDetector(
+            onLongPress: () => _showCourseActions(course),
+            child: CourseCard(
+              course: course,
+              deliverableCount: deliverableCount,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CourseDetailsScreen(
+                      course: course,
+                      repository: widget.repository,
+                      userId: _userId,
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         );
       },
