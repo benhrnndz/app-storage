@@ -1,11 +1,14 @@
 // lib/features/schedule/screens/schedule_screen.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../data/mock_data.dart';
 import '../../../data/repositories/lms_repository.dart';
+import '../../../data/services/notification_service.dart';
 import '../../../models/course.dart';
 import '../../../models/schedule.dart';
 import '../widgets/add_schedule_modal.dart';
+import '../widgets/notification_opt_in_banner.dart';
 
 /// Screen allowing students to manage their weekly class timetable
 /// and view their dedicated calendar agenda based on their sync preferences.
@@ -31,6 +34,71 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   // Selected date for the calendar agenda (defaults to today)
   DateTime _selectedDate = DateTime.now();
+
+  final NotificationService _notificationService = NotificationService();
+  bool _remindersEnabled = false;
+  bool _bannerDismissed = false;
+  int _reminderMinutes = 15;
+  Timer? _reminderTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotificationPreferences();
+  }
+
+  @override
+  void dispose() {
+    _reminderTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadNotificationPreferences() async {
+    final enabled = await _notificationService.areNotificationsEnabled();
+    final dismissed = await _notificationService.isBannerDismissed();
+    final minutes = await _notificationService.getReminderMinutesBefore();
+    if (mounted) {
+      setState(() {
+        _remindersEnabled = enabled;
+        _bannerDismissed = dismissed;
+        _reminderMinutes = minutes;
+      });
+    }
+  }
+
+  void _checkUpcomingReminders(List<ScheduleSlot> slots, List<Course> courses) {
+    if (_remindersEnabled) {
+      _notificationService.checkUpcomingClasses(slots, courses);
+    }
+  }
+
+  Future<void> _enableReminders() async {
+    final granted = await _notificationService.requestPermission();
+    await _loadNotificationPreferences();
+    if (mounted) {
+      if (granted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green.shade700,
+            content: Text('✓ Class reminders enabled ($_reminderMinutes mins before class)'),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Notification permissions were not granted by your browser or device.'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _dismissBanner() async {
+    await _notificationService.setBannerDismissed(true);
+    if (mounted) {
+      setState(() => _bannerDismissed = true);
+    }
+  }
 
   Course? _getCourseForSlot(List<Course> courses, ScheduleSlot slot) {
     try {
@@ -236,6 +304,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   // VIEW 1: DEDICATED CALENDAR AGENDA
   // ==========================================
   Widget _buildCalendarAgendaView(List<ScheduleSlot> slots, List<Course> courses) {
+    _checkUpcomingReminders(slots, courses);
     final selectedDayOfWeek = _selectedDate.weekday;
 
     // Filter slots for the selected day:
@@ -253,6 +322,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     return Column(
       children: [
+        // Contextual Glass Banner for class reminders
+        if (!_remindersEnabled && !_bannerDismissed)
+          NotificationOptInBanner(
+            onOptIn: _enableReminders,
+            onDismiss: _dismissBanner,
+          ),
+
         // Horizontal 7-Day Date Strip
         _buildWeekDateStrip(),
 
@@ -287,22 +363,25 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         Expanded(
           child: activeAgendaSlots.isEmpty
               ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.event_busy, size: 56, color: Colors.grey.shade400),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No scheduled classes for this day.',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Either you have no class, the course is archived,\nor sync is disabled under "Timetable Settings".',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-                      ),
-                    ],
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.event_busy, size: 48, color: Colors.grey.shade400),
+                        const SizedBox(height: 10),
+                        Text(
+                          'No scheduled classes for this day.',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Either you have no class, the course is archived,\nor sync is disabled under "Timetable Settings".',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12.5, color: Colors.grey.shade500),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               : ListView.builder(
@@ -436,29 +515,50 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   Widget _buildTimetableSetupView(List<ScheduleSlot> slots, List<Course> courses) {
     // 1. Filter out orphan slots whose courses were deleted
     final validSlots = slots.where((slot) => _getCourseForSlot(courses, slot) != null).toList();
-
-    if (validSlots.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.calendar_today, size: 52, color: Colors.grey.shade400),
-            const SizedBox(height: 10),
-            const Text('No class sessions created yet.', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            const Text('Tap "+" at the top to add recurring class hours.', style: TextStyle(fontSize: 12, color: Colors.grey)),
-          ],
-        ),
-      );
-    }
-
     final activeSlots = validSlots.where((s) => !_getCourseForSlot(courses, s)!.isArchived).toList();
     final archivedSlots = validSlots.where((s) => _getCourseForSlot(courses, s)!.isArchived).toList();
 
     return ListView(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
       children: [
+        // Class Start Reminders Configuration Card
+        _buildReminderSettingsCard(),
+
+        if (validSlots.isEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 36),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.calendar_today, size: 52, color: Colors.grey.shade400),
+                  const SizedBox(height: 10),
+                  const Text('No class sessions created yet.', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  const Text('Tap "+" at the top to add recurring class hours.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                ],
+              ),
+            ),
+          ),
+        ],
+
         if (activeSlots.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8, left: 4),
+            child: Text(
+              'ACTIVE TIMETABLE (${activeSlots.length})',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade600,
+                letterSpacing: 1.1,
+              ),
+            ),
+          ),
+          ...activeSlots.map((slot) => _buildTimetableSlotTile(slot, courses, isArchived: false)),
+        ],
+
+        if (archivedSlots.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.only(bottom: 8, left: 4),
             child: Text(
@@ -652,6 +752,125 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildReminderSettingsCard() {
+    return GlassContainer(
+      borderRadius: 22,
+      blur: 16,
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      borderColor: _remindersEnabled ? Colors.blueAccent.withOpacity(0.3) : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: (_remindersEnabled ? Colors.blueAccent : Colors.grey).withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _remindersEnabled ? Icons.notifications_active : Icons.notifications_outlined,
+                      color: _remindersEnabled ? Colors.blueAccent : Colors.grey.shade600,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Class Start Reminders',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      Text(
+                        _remindersEnabled
+                            ? 'Active: Alert $_reminderMinutes mins before class'
+                            : 'Disabled: No alerts for classes',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _remindersEnabled ? Colors.blueAccent.shade700 : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Switch(
+                value: _remindersEnabled,
+                activeColor: Colors.blueAccent,
+                onChanged: (value) async {
+                  if (value) {
+                    await _enableReminders();
+                  } else {
+                    await _notificationService.setNotificationsEnabled(false);
+                    await _loadNotificationPreferences();
+                  }
+                },
+              ),
+            ],
+          ),
+          if (_remindersEnabled) ...[
+            const Divider(height: 24),
+            Row(
+              children: [
+                const Icon(Icons.timer_outlined, size: 16, color: Colors.grey),
+                const SizedBox(width: 6),
+                const Text(
+                  'Reminder Lead Time:',
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [5, 10, 15, 30].map((minutes) {
+                final isSelected = _reminderMinutes == minutes;
+                return ChoiceChip(
+                  label: Text(minutes == 15 ? '15 mins (Default)' : '$minutes mins'),
+                  selected: isSelected,
+                  selectedColor: Colors.blueAccent.withOpacity(0.2),
+                  onSelected: (selected) async {
+                    if (selected) {
+                      await _notificationService.setReminderMinutesBefore(minutes);
+                      await _loadNotificationPreferences();
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () async {
+                  await _notificationService.sendTestNotification();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('✓ Sent test notification')),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.send_outlined, size: 16),
+                label: const Text('Send Test Notification', style: TextStyle(fontSize: 12)),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
