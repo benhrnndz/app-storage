@@ -1,6 +1,9 @@
 // lib/features/courses/screens/course_details_screen.dart
 import 'package:flutter/material.dart';
+import '../../../core/widgets/ambient_background.dart';
+import '../../../core/widgets/bouncy_tap.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/staggered_entrance.dart';
 import '../../../data/mock_data.dart';
 import '../../../data/repositories/lms_repository.dart';
 import '../../../models/course.dart';
@@ -152,7 +155,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: StreamBuilder<List<Deliverable>>(
+      body: AmbientMeshBackground(
+        child: StreamBuilder<List<Deliverable>>(
         stream: deliverablesStream,
         builder: (context, snapshot) {
           final all = snapshot.data ?? mockDeliverables;
@@ -279,25 +283,28 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                         itemCount: displayedDeliverables.length,
                         itemBuilder: (context, index) {
                           final item = displayedDeliverables[index];
-                          return GestureDetector(
-                            onLongPress: () => _showDeliverableOptions(item),
-                            child: DeliverableTile(
-                              deliverable: item,
-                              onStatusChanged: (_) => _toggleDeliverableStatus(item),
-                              onOpenRepo: item.repoUrl != null
-                                  ? () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Opening Repository: ${item.repoUrl}')),
-                                      );
-                                    }
-                                  : null,
-                              onOpenVideo: item.videoDemoUrl != null
-                                  ? () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Opening Video Demo: ${item.videoDemoUrl}')),
-                                      );
-                                    }
-                                  : null,
+                          return StaggeredEntrance(
+                            index: index,
+                            child: GestureDetector(
+                              onLongPress: () => _showDeliverableOptions(item),
+                              child: DeliverableTile(
+                                deliverable: item,
+                                onStatusChanged: (_) => _toggleDeliverableStatus(item),
+                                onOpenRepo: item.repoUrl != null
+                                    ? () {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Opening Repository: ${item.repoUrl}')),
+                                        );
+                                      }
+                                    : null,
+                                onOpenVideo: item.videoDemoUrl != null
+                                    ? () {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Opening Video Demo: ${item.videoDemoUrl}')),
+                                        );
+                                      }
+                                    : null,
+                              ),
                             ),
                           );
                         },
@@ -307,16 +314,20 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        elevation: 4,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        onPressed: () => _openAddDeliverableModal(),
-        icon: const Icon(Icons.add),
-        label: const Text(
-          'Add Deliverable',
-          style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      floatingActionButton: BouncyTap(
+        onTap: () => _openAddDeliverableModal(),
+        child: FloatingActionButton.extended(
+          elevation: 4,
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          onPressed: () => _openAddDeliverableModal(),
+          icon: const Icon(Icons.add),
+          label: const Text(
+            'Add Deliverable',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );
