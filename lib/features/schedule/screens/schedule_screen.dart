@@ -1,7 +1,10 @@
 // lib/features/schedule/screens/schedule_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../core/widgets/ambient_background.dart';
+import '../../../core/widgets/bouncy_tap.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/staggered_entrance.dart';
 import '../../../data/mock_data.dart';
 import '../../../data/repositories/lms_repository.dart';
 import '../../../data/services/notification_service.dart';
@@ -258,40 +261,42 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   const SizedBox(width: 8),
                 ],
               ),
-              body: Column(
-                children: [
-                  // View Switcher: "Calendar Agenda" vs "Timetable Settings"
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: SegmentedButton<int>(
-                      segments: const [
-                        ButtonSegment(
-                          value: 0,
-                          label: Text('Calendar Agenda'),
-                          icon: Icon(Icons.calendar_month),
-                        ),
-                        ButtonSegment(
-                          value: 1,
-                          label: Text('Timetable Settings'),
-                          icon: Icon(Icons.tune),
-                        ),
-                      ],
-                      selected: {_viewMode},
-                      onSelectionChanged: (newSelection) {
-                        setState(() => _viewMode = newSelection.first);
-                      },
+              body: AmbientMeshBackground(
+                child: Column(
+                  children: [
+                    // View Switcher: "Calendar Agenda" vs "Timetable Settings"
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: SegmentedButton<int>(
+                        segments: const [
+                          ButtonSegment(
+                            value: 0,
+                            label: Text('Calendar Agenda'),
+                            icon: Icon(Icons.calendar_month),
+                          ),
+                          ButtonSegment(
+                            value: 1,
+                            label: Text('Timetable Settings'),
+                            icon: Icon(Icons.tune),
+                          ),
+                        ],
+                        selected: {_viewMode},
+                        onSelectionChanged: (newSelection) {
+                          setState(() => _viewMode = newSelection.first);
+                        },
+                      ),
                     ),
-                  ),
 
-                  const Divider(height: 1),
+                    const Divider(height: 1),
 
-                  // Main View Content
-                  Expanded(
-                    child: _viewMode == 0
-                        ? _buildCalendarAgendaView(slots, courses)
-                        : _buildTimetableSetupView(slots, courses),
-                  ),
-                ],
+                    // Main View Content
+                    Expanded(
+                      child: _viewMode == 0
+                          ? _buildCalendarAgendaView(slots, courses)
+                          : _buildTimetableSetupView(slots, courses),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -393,56 +398,59 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     if (course == null) return const SizedBox.shrink();
                     final courseColor = Color(course.colorValue);
 
-                    return GestureDetector(
-                      onLongPress: () => _showSlotOptions(slot, courses),
-                      child: GlassContainer(
-                        borderRadius: 20,
-                        blur: 14,
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(slot.startTime, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                Text(slot.endTime, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                              ],
-                            ),
-                            const SizedBox(width: 16),
-                            Container(
-                              width: 3,
-                              height: 48,
-                              decoration: BoxDecoration(color: courseColor, borderRadius: BorderRadius.circular(2)),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
+                    return StaggeredEntrance(
+                      index: index,
+                      child: GestureDetector(
+                        onLongPress: () => _showSlotOptions(slot, courses),
+                        child: GlassContainer(
+                          borderRadius: 20,
+                          blur: 14,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(course.code, style: TextStyle(fontWeight: FontWeight.bold, color: courseColor, fontSize: 14)),
-                                  Text(course.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        slot.roomOrLink.contains('Online') || slot.roomOrLink.contains('Zoom')
-                                            ? Icons.videocam_outlined
-                                             : Icons.location_on_outlined,
-                                        size: 14,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(slot.roomOrLink, style: TextStyle(fontSize: 12, color: Colors.grey.shade700), overflow: TextOverflow.ellipsis),
-                                      ),
-                                    ],
-                                  ),
+                                  Text(slot.startTime, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  Text(slot.endTime, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                                 ],
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 16),
+                              Container(
+                                width: 3,
+                                height: 48,
+                                decoration: BoxDecoration(color: courseColor, borderRadius: BorderRadius.circular(2)),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(course.code, style: TextStyle(fontWeight: FontWeight.bold, color: courseColor, fontSize: 14)),
+                                    Text(course.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          slot.roomOrLink.contains('Online') || slot.roomOrLink.contains('Zoom')
+                                              ? Icons.videocam_outlined
+                                              : Icons.location_on_outlined,
+                                          size: 14,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(slot.roomOrLink, style: TextStyle(fontSize: 12, color: Colors.grey.shade700), overflow: TextOverflow.ellipsis),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
