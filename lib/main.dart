@@ -1,6 +1,7 @@
 // lib/main.dart
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'core/theme/app_theme.dart';
 import 'data/repositories/lms_repository.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/auth/services/firebase_auth_service.dart';
@@ -50,26 +51,7 @@ class StudentLmsApp extends StatelessWidget {
     return MaterialApp(
       title: 'Student LMS & Portfolio',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF3F5F9), // iOS light canvas
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF007AFF), // iOS System Blue
-          brightness: Brightness.light,
-        ),
-        appBarTheme: const AppBarTheme(
-          centerTitle: false,
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          surfaceTintColor: Colors.transparent,
-        ),
-        cardTheme: CardThemeData(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
       home: AuthGate(
         authService: authService,
         repository: repository,
