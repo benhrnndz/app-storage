@@ -1,9 +1,11 @@
 // test/calendar_sync_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:student_lms/data/services/calendar_export_platform.dart';
 import 'package:student_lms/data/services/calendar_sync_service.dart';
 import 'package:student_lms/features/schedule/widgets/google_calendar_export_card.dart';
+import 'package:student_lms/features/schedule/widgets/schedule_settings_modal.dart';
 import 'package:student_lms/models/course.dart';
 import 'package:student_lms/models/schedule.dart';
 
@@ -134,6 +136,29 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Calendar Sync Options'), findsOneWidget);
+    });
+
+    testWidgets('ScheduleSettingsModal renders reminders and export options cleanly in a modal', (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final mockHandler = MockCalendarExportHandler();
+      final service = CalendarSyncService(exportHandler: mockHandler);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ScheduleSettingsModal(
+              courses: [testCourse],
+              slots: [testSlot],
+              calendarSyncService: service,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Schedule & Sync Settings'), findsOneWidget);
+      expect(find.text('Class Start Reminders'), findsOneWidget);
+      expect(find.text('Google Calendar & Timetable Export'), findsOneWidget);
     });
   });
 }
