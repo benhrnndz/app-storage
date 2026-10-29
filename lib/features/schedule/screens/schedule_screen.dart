@@ -7,10 +7,12 @@ import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/staggered_entrance.dart';
 import '../../../data/mock_data.dart';
 import '../../../data/repositories/lms_repository.dart';
+import '../../../data/services/calendar_sync_service.dart';
 import '../../../data/services/notification_service.dart';
 import '../../../models/course.dart';
 import '../../../models/schedule.dart';
 import '../widgets/add_schedule_modal.dart';
+import '../widgets/google_calendar_export_card.dart';
 import '../widgets/notification_opt_in_banner.dart';
 
 /// Screen allowing students to manage their weekly class timetable
@@ -163,6 +165,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  ListTile(
+                    leading: const Icon(Icons.event_available_outlined, color: Colors.blueAccent),
+                    title: const Text('Add to Google Calendar', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: const Text('Pre-fills weekly recurring class in Google Calendar', style: TextStyle(fontSize: 12)),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      final course = _getCourseForSlot(courses, slot);
+                      if (course != null) {
+                        await CalendarSyncService.launchGoogleCalendar(course: course, slot: slot);
+                      }
+                    },
+                  ),
                   ListTile(
                     leading: const Icon(Icons.edit_outlined, color: Colors.blueAccent),
                     title: const Text('Edit Class Slot', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -449,6 +463,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                   ],
                                 ),
                               ),
+                              IconButton(
+                                icon: const Icon(Icons.event_available_outlined, size: 20, color: Colors.blueAccent),
+                                tooltip: 'Add to Google Calendar',
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () => CalendarSyncService.launchGoogleCalendar(course: course, slot: slot),
+                              ),
                             ],
                           ),
                         ),
@@ -531,6 +551,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       children: [
         // Class Start Reminders Configuration Card
         _buildReminderSettingsCard(),
+
+        // Google Calendar & Timetable Export Card
+        GoogleCalendarExportCard(courses: courses, slots: slots),
 
         if (validSlots.isEmpty) ...[
           Padding(
@@ -758,6 +781,26 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ),
               ],
             ),
+            if (!isArchived) ...[
+              const Divider(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => CalendarSyncService.launchGoogleCalendar(course: course, slot: slot),
+                    icon: const Icon(Icons.event_available_outlined, size: 15, color: Colors.blueAccent),
+                    label: const Text(
+                      'Add to Google Calendar',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                    ),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
