@@ -12,8 +12,7 @@ import '../../../data/services/notification_service.dart';
 import '../../../models/course.dart';
 import '../../../models/schedule.dart';
 import '../widgets/add_schedule_modal.dart';
-import '../widgets/google_calendar_export_card.dart';
-import '../widgets/notification_opt_in_banner.dart';
+import '../widgets/schedule_settings_modal.dart';
 
 /// Screen allowing students to manage their weekly class timetable
 /// and view their dedicated calendar agenda based on their sync preferences.
@@ -150,6 +149,24 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
+  void _openScheduleSettingsModal(List<Course> courses, List<ScheduleSlot> slots) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return ScheduleSettingsModal(
+          courses: courses,
+          slots: slots,
+          notificationService: _notificationService,
+          onSettingsChanged: () {
+            _loadNotificationPreferences();
+          },
+        );
+      },
+    );
+  }
+
   void _showSlotOptions(ScheduleSlot slot, List<Course> courses) {
     showModalBottomSheet(
       context: context,
@@ -268,6 +285,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ),
                 actions: [
                   IconButton(
+                    icon: const Icon(Icons.tune_outlined, size: 22),
+                    tooltip: 'Schedule & Sync Settings',
+                    onPressed: () => _openScheduleSettingsModal(courses, slots),
+                  ),
+                  IconButton(
                     icon: const Icon(Icons.add_circle_outline, size: 24),
                     tooltip: 'Add Class Session',
                     onPressed: () => _openAddScheduleModal(courses),
@@ -341,13 +363,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     return Column(
       children: [
-        // Contextual Glass Banner for class reminders
-        if (!_remindersEnabled && !_bannerDismissed)
-          NotificationOptInBanner(
-            onOptIn: _enableReminders,
-            onDismiss: _dismissBanner,
-          ),
-
         // Horizontal 7-Day Date Strip
         _buildWeekDateStrip(),
 
@@ -463,12 +478,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                   ],
                                 ),
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.event_available_outlined, size: 20, color: Colors.blueAccent),
-                                tooltip: 'Add to Google Calendar',
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () => CalendarSyncService.launchGoogleCalendar(course: course, slot: slot),
-                              ),
                             ],
                           ),
                         ),
@@ -549,12 +558,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return ListView(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
       children: [
-        // Class Start Reminders Configuration Card
-        _buildReminderSettingsCard(),
-
-        // Google Calendar & Timetable Export Card
-        GoogleCalendarExportCard(courses: courses, slots: slots),
-
         if (validSlots.isEmpty) ...[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 36),
@@ -781,147 +784,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ),
               ],
             ),
-            if (!isArchived) ...[
-              const Divider(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton.icon(
-                    onPressed: () => CalendarSyncService.launchGoogleCalendar(course: course, slot: slot),
-                    icon: const Icon(Icons.event_available_outlined, size: 15, color: Colors.blueAccent),
-                    label: const Text(
-                      'Add to Google Calendar',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blueAccent),
-                    ),
-                    style: TextButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildReminderSettingsCard() {
-    return GlassContainer(
-      borderRadius: 22,
-      blur: 16,
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(16),
-      borderColor: _remindersEnabled ? Colors.blueAccent.withOpacity(0.3) : null,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: (_remindersEnabled ? Colors.blueAccent : Colors.grey).withOpacity(0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      _remindersEnabled ? Icons.notifications_active : Icons.notifications_outlined,
-                      color: _remindersEnabled ? Colors.blueAccent : Colors.grey.shade600,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Class Start Reminders',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                      Text(
-                        _remindersEnabled
-                            ? 'Active: Alert $_reminderMinutes mins before class'
-                            : 'Disabled: No alerts for classes',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: _remindersEnabled ? Colors.blueAccent.shade700 : Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Switch(
-                value: _remindersEnabled,
-                activeColor: Colors.blueAccent,
-                onChanged: (value) async {
-                  if (value) {
-                    await _enableReminders();
-                  } else {
-                    await _notificationService.setNotificationsEnabled(false);
-                    await _loadNotificationPreferences();
-                  }
-                },
-              ),
-            ],
-          ),
-          if (_remindersEnabled) ...[
-            const Divider(height: 24),
-            Row(
-              children: [
-                const Icon(Icons.timer_outlined, size: 16, color: Colors.grey),
-                const SizedBox(width: 6),
-                const Text(
-                  'Reminder Lead Time:',
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [5, 10, 15, 30].map((minutes) {
-                final isSelected = _reminderMinutes == minutes;
-                return ChoiceChip(
-                  label: Text(minutes == 15 ? '15 mins (Default)' : '$minutes mins'),
-                  selected: isSelected,
-                  selectedColor: Colors.blueAccent.withOpacity(0.2),
-                  onSelected: (selected) async {
-                    if (selected) {
-                      await _notificationService.setReminderMinutesBefore(minutes);
-                      await _loadNotificationPreferences();
-                    }
-                  },
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () async {
-                  await _notificationService.sendTestNotification();
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('✓ Sent test notification')),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.send_outlined, size: 16),
-                label: const Text('Send Test Notification', style: TextStyle(fontSize: 12)),
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }
