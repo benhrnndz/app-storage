@@ -4,7 +4,8 @@
 **Course:** System Integration and Architecture  
 **Author:** Ben  
 **Platform:** Flutter (Cross-platform: iOS, Android, Web, macOS)  
-**Last Updated:** October 26, 2026
+**Live Application URL:** https://syllo-lms.web.app  
+**Last Updated:** October 30, 2026
 
 ---
 
