@@ -17,7 +17,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify that our app bar title and navigation destinations are present.
-    expect(find.text('My Academic Hub'), findsOneWidget);
+    expect(find.text('Syllo — Academic Hub'), findsOneWidget);
     expect(find.text('Courses'), findsOneWidget);
     expect(find.text('Schedule'), findsOneWidget);
 
