@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/widgets/ambient_background.dart';
 import '../../../core/widgets/bouncy_tap.dart';
+import '../../../core/widgets/frosted_app_bar.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/staggered_entrance.dart';
 import '../../../data/mock_data.dart';
@@ -143,9 +144,14 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         : Stream.value(mockDeliverables);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.course.code),
-        backgroundColor: courseColor.withOpacity(0.08),
+      appBar: FrostedAppBar(
+        title: Text(widget.course.code, style: const TextStyle(fontWeight: FontWeight.bold)),
+        gradientColors: [
+          courseColor.withOpacity(0.22),
+          courseColor.withOpacity(0.10),
+          const Color(0xFF2563EB).withOpacity(0.06),
+        ],
+        borderColor: courseColor.withOpacity(0.25),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_circle_outline, size: 24),
