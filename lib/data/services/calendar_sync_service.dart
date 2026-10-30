@@ -57,7 +57,7 @@ class CalendarSyncService {
     final byDay = getDayCode(slot.dayOfWeek);
 
     final title = '${course.code}: ${course.title}';
-    final details = 'Instructor: ${course.instructor}\nSemester: ${course.semester}\nManaged via Student LMS & Academic Portfolio';
+    final details = 'Instructor: ${course.instructor}\nSemester: ${course.semester}\nManaged via Syllo Academic Portfolio';
     final location = slot.roomOrLink;
     final recurrence = 'RRULE:FREQ=WEEKLY;BYDAY=$byDay';
 
@@ -103,7 +103,7 @@ class CalendarSyncService {
 
     buffer.writeln('BEGIN:VCALENDAR');
     buffer.writeln('VERSION:2.0');
-    buffer.writeln('PRODID:-//Student LMS//University Timetable//EN');
+    buffer.writeln('PRODID:-//Syllo//University Timetable//EN');
     buffer.writeln('CALSCALE:GREGORIAN');
     buffer.writeln('METHOD:PUBLISH');
     buffer.writeln('X-WR-CALNAME:University Timetable');
