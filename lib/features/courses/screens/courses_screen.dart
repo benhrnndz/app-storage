@@ -296,10 +296,10 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: isAiEnabled ? Colors.blueAccent.withOpacity(0.08) : Colors.black.withOpacity(0.03),
+                          color: isAiEnabled ? theme.colorScheme.primary.withOpacity(0.08) : Colors.black.withOpacity(0.03),
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(
-                            color: isAiEnabled ? Colors.blueAccent.withOpacity(0.3) : Colors.grey.shade300,
+                            color: isAiEnabled ? theme.colorScheme.primary.withOpacity(0.3) : Colors.grey.shade300,
                             width: 1.2,
                           ),
                         ),
@@ -314,12 +314,12 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                                     Container(
                                       padding: const EdgeInsets.all(6),
                                       decoration: BoxDecoration(
-                                        color: (isAiEnabled ? Colors.blueAccent : Colors.grey).withOpacity(0.12),
+                                        color: (isAiEnabled ? theme.colorScheme.primary : Colors.grey).withOpacity(0.12),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         Icons.auto_awesome,
-                                        color: isAiEnabled ? Colors.blueAccent : Colors.grey.shade600,
+                                        color: isAiEnabled ? theme.colorScheme.primary : Colors.grey.shade600,
                                         size: 18,
                                       ),
                                     ),
@@ -335,7 +335,7 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                                           isAiEnabled ? 'Active in navigation bar' : 'Disabled (Hidden)',
                                           style: TextStyle(
                                             fontSize: 11.5,
-                                            color: isAiEnabled ? Colors.blueAccent.shade700 : Colors.grey.shade600,
+                                            color: isAiEnabled ? theme.colorScheme.primary : Colors.grey.shade600,
                                           ),
                                         ),
                                       ],
@@ -344,7 +344,7 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                                 ),
                                 Switch(
                                   value: isAiEnabled,
-                                  activeColor: Colors.blueAccent,
+                                  activeColor: theme.colorScheme.primary,
                                   onChanged: (val) async {
                                     await AiPreferencesService.setAiEnabled(val);
                                     setModalState(() {});
@@ -352,7 +352,7 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
                                           duration: const Duration(seconds: 2),
-                                          backgroundColor: val ? Colors.blueAccent : Colors.grey.shade800,
+                                          backgroundColor: val ? theme.colorScheme.primary : Colors.grey.shade800,
                                           content: Text(
                                             val
                                                 ? '✓ AI Academic Assistant added to navigation'
@@ -428,7 +428,7 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
             return Scaffold(
               appBar: FrostedAppBar(
                 title: const Text(
-                  'My Academic Hub',
+                  'Syllo — Academic Hub',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 actions: [
@@ -460,7 +460,7 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                 ],
                 bottom: TabBar(
                   controller: _tabController,
-                  indicatorColor: Colors.blueAccent,
+                  indicatorColor: Theme.of(context).colorScheme.primary,
                   tabs: const [
                     Tab(icon: Icon(Icons.school), text: 'Active Courses'),
                     Tab(icon: Icon(Icons.history_edu), text: 'Past Courses'),
