@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/widgets/ambient_background.dart';
 import '../../../core/widgets/bouncy_tap.dart';
+import '../../../core/widgets/frosted_app_bar.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/staggered_entrance.dart';
 import '../../../data/mock_data.dart';
@@ -278,11 +279,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             final slots = scheduleSnapshot.data ?? mockSchedules;
 
             return Scaffold(
-              appBar: AppBar(
+              appBar: FrostedAppBar(
                 title: const Text(
                   'Class Schedule & Calendar',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
+                gradientColors: [
+                  const Color(0xFF2563EB).withOpacity(0.16),
+                  const Color(0xFF4F46E5).withOpacity(0.10),
+                  const Color(0xFF0D9488).withOpacity(0.06),
+                ],
                 actions: [
                   IconButton(
                     icon: const Icon(Icons.tune_outlined, size: 22),
