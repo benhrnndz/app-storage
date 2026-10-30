@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/widgets/ambient_background.dart';
 import '../../../core/widgets/bouncy_tap.dart';
+import '../../../core/widgets/frosted_app_bar.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/staggered_entrance.dart';
 import '../../../data/mock_data.dart';
@@ -183,7 +184,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 final schedules = scheduleSnapshot.data ?? mockSchedules;
 
                 return Scaffold(
-                  appBar: AppBar(
+                  appBar: FrostedAppBar(
                     title: const Row(
                       children: [
                         Icon(Icons.auto_awesome, color: Colors.blueAccent, size: 22),
@@ -194,6 +195,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                         ),
                       ],
                     ),
+                    gradientColors: [
+                      const Color(0xFF4F46E5).withOpacity(0.18),
+                      const Color(0xFF7C3AED).withOpacity(0.12),
+                      const Color(0xFF2563EB).withOpacity(0.08),
+                    ],
                     actions: [
                       IconButton(
                         icon: const Icon(Icons.refresh_outlined, size: 20),
