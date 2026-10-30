@@ -51,7 +51,7 @@ class StudentLmsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Student LMS & Portfolio',
+      title: 'Syllo',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: AuthGate(
