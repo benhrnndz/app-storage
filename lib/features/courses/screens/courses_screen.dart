@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/widgets/ambient_background.dart';
 import '../../../core/widgets/bouncy_tap.dart';
+import '../../../core/widgets/frosted_app_bar.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/staggered_entrance.dart';
 import '../../../data/mock_data.dart';
@@ -425,7 +426,7 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
             final archivedCourses = courses.where((c) => c.isArchived).toList();
 
             return Scaffold(
-              appBar: AppBar(
+              appBar: FrostedAppBar(
                 title: const Text(
                   'My Academic Hub',
                   style: TextStyle(fontWeight: FontWeight.bold),
