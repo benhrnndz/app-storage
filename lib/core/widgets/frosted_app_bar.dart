@@ -50,9 +50,9 @@ class FrostedAppBar extends StatelessWidget implements PreferredSizeWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final defaultColors = [
-      AppTheme.primaryBlue.withOpacity(isDark ? 0.28 : 0.16),
-      AppTheme.accentIndigo.withOpacity(isDark ? 0.20 : 0.09),
-      const Color(0xFF3B82F6).withOpacity(isDark ? 0.14 : 0.04),
+      AppTheme.primaryTeal.withOpacity(isDark ? 0.30 : 0.16),
+      AppTheme.accentTeal.withOpacity(isDark ? 0.22 : 0.11),
+      AppTheme.secondarySage.withOpacity(isDark ? 0.16 : 0.06),
     ];
 
     final colors = gradientColors ?? defaultColors;
@@ -65,7 +65,7 @@ class FrostedAppBar extends StatelessWidget implements PreferredSizeWidget {
     final effectiveBorderColor = borderColor ??
         (isDark
             ? Colors.white.withOpacity(0.12)
-            : const Color(0xFF2563EB).withOpacity(0.18));
+            : AppTheme.accentTeal.withOpacity(0.18));
 
     return AppBar(
       title: title,
@@ -100,7 +100,7 @@ class FrostedAppBar extends StatelessWidget implements PreferredSizeWidget {
                   : null,
               boxShadow: [
                 BoxShadow(
-                  color: (isDark ? Colors.black : const Color(0xFF1E3A8A))
+                  color: (isDark ? Colors.black : const Color(0xFF042F2E))
                       .withOpacity(isDark ? 0.35 : 0.04),
                   blurRadius: 14,
                   offset: const Offset(0, 3),
@@ -113,3 +113,4 @@ class FrostedAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 }
+
