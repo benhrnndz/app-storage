@@ -1,4 +1,4 @@
-# System Architecture Specification
+# System Architecture Specification: Syllo
 ## Student Learning Management System (LMS) & Academic Portfolio
 
 **Course:** System Integration and Architecture  
@@ -12,7 +12,7 @@
 
 Traditional Learning Management Systems (Canvas, Blackboard, Moodle) are designed from an institutional perspective—prioritizing grading workflows, administrative oversight, and professor-to-student content broadcasting.
 
-This project implements an **alternate, student-centric LMS** designed to serve as:
+**Syllo** is an alternate, student-centric academic workspace and portfolio designed to serve as:
 1. An **Academic Portfolio & Deliverable Archive** where students maintain ownership of their activities, presentations, and code projects (including GitHub repository links and video demonstrations).
 2. A **Smart Timetable & Calendar Engine** where students have autonomous control over how their schedule populates their daily agenda.
 3. A **Cross-Device Synced Workspace** retaining data integrity across mobile and desktop environments.
@@ -114,13 +114,18 @@ Rather than enforcing rigid, single-purpose URL boxes (e.g. only GitHub or YouTu
 1. **Dynamic Link Collection**: Students can attach an arbitrary number of optional links (`List<String> links`) representing any web resource (Figma prototypes, Notion documentation, Google Drive folders, personal portfolios, code repos, or demo videos).
 2. **Binary Blob Cloud Storage**: Direct photo and file uploads (diagrams, photos of physical lab work, PDFs) are decoupled from Firestore and stored in Firebase Cloud Storage (`FirebaseStorageService`) under `users/{userId}/courses/{courseId}/attachments/`, persisting only the HTTPS download URL in Firestore. An abstract `StorageService` contract ensures mock-ability for testing and offline environments.
 
-### 4.5 Emil Kowalski Alabaster Frost Motion & Glass Architecture
-The UI incorporates Emil Kowalski's micro-interaction and tactile design principles:
-1. **Vibrant Frosted Gradient App Bar (`FrostedAppBar`)**: Luminous top headers across screens (`CoursesScreen`, `ScheduleScreen`, `AiAssistantScreen`, `CourseDetailsScreen`) utilizing `BackdropFilter` (blur 20 sigma), dual-stop gradient washes (Royal Azure `#2563EB` to Electric Indigo `#4F46E5`), and a specular highlight bottom border (`#2563EB.withOpacity(0.18)`), establishing visual depth while floating above content. In `CourseDetailsScreen`, the gradient wash dynamically adapts to the course's theme color.
-2. **Tactile Spring Physics (`BouncyTap`)**: Scale transitions with overshoot springs (`CurvedAnimation` with easeOutCubic) providing immediate tactile feedback on all cards, buttons, and chips.
-3. **Ambient Mesh (`AmbientMeshBackground`)**: Subtle floating translucent radial blobs creating background depth without jarring brightness or distraction.
-4. **Frosted Glass Containers (`GlassContainer`)**: Translucent cards featuring dual specular borders and subtle drop shadows.
-5. **Satisfying Checkbox (`SatisfyingCheckbox`)**: Multi-phase micro-animated spring-pop checkbox with scale bump and haptic-style visual pulse for deliverable task completion.
+### 4.5 Emil Kowalski Alabaster Frost & Biophilic Motion Architecture
+The UI incorporates Emil Kowalski's micro-interaction and tactile design principles, paired with a scientifically grounded **Biophilic Focus & Endurance** color palette (Kaplan Attention Restoration Theory & UBC learning performance studies):
+1. **Biophilic Focus & Endurance Palette (`AppTheme`)**:
+   - **Deep Oceanic Teal (`#0F766E` / `#0D9488`)**: Activates the parasympathetic nervous system to promote calm, analytical focus and deep work during coding and reading.
+   - **Sage Emerald (`#10B981`)**: Centered on the visible spectrum to minimize optical fatigue and replenish depleted cognitive reserves.
+   - **Warm Honey Ochre (`#F59E0B`)**: Provides selective alertness for upcoming deadlines and priority deliverables without inducing cortisol or panic.
+   - **Alabaster Mint (`#F6F9F8`)**: Soft, anti-glare canvas eliminating harsh screen contrast.
+2. **Vibrant Frosted Gradient App Bar (`FrostedAppBar`)**: Luminous top headers across screens (`CoursesScreen`, `ScheduleScreen`, `AiAssistantScreen`, `CourseDetailsScreen`) utilizing `BackdropFilter` (blur 20 sigma), dual-stop gradient washes (Deep Oceanic Teal `#0F766E` to Luminous Focus Teal `#0D9488` and Sage Emerald `#10B981`), and a specular highlight bottom border (`#0D9488.withOpacity(0.18)`), establishing visual depth while floating above content. In `CourseDetailsScreen`, the gradient wash dynamically adapts to the course's theme color.
+3. **Tactile Spring Physics (`BouncyTap`)**: Scale transitions with overshoot springs (`CurvedAnimation` with easeOutCubic) providing immediate tactile feedback on all cards, buttons, and chips.
+4. **Ambient Mesh (`AmbientMeshBackground`)**: Subtle floating translucent biophilic teal, sage, and mint blobs creating background depth without jarring brightness or distraction.
+5. **Frosted Glass Containers (`GlassContainer`)**: Translucent cards featuring dual specular borders and subtle drop shadows.
+6. **Satisfying Checkbox (`SatisfyingCheckbox`)**: Multi-phase micro-animated spring-pop checkbox with scale bump and haptic-style visual pulse for deliverable task completion.
 
 ---
 
