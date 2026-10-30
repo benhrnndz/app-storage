@@ -149,7 +149,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         gradientColors: [
           courseColor.withOpacity(0.22),
           courseColor.withOpacity(0.10),
-          const Color(0xFF2563EB).withOpacity(0.06),
+          const Color(0xFF0D9488).withOpacity(0.06),
         ],
         borderColor: courseColor.withOpacity(0.25),
         actions: [
