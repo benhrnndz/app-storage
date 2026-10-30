@@ -9,6 +9,7 @@ import '../../../data/repositories/lms_repository.dart';
 import '../../../models/auth_user.dart';
 import '../../../models/course.dart';
 import '../../../models/deliverable.dart';
+import '../../ai_assistant/services/ai_preferences_service.dart';
 import '../../auth/services/auth_service.dart';
 import '../widgets/add_course_modal.dart';
 import '../widgets/course_card.dart';
@@ -204,108 +205,197 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            child: GlassContainer(
-              borderRadius: 28,
-              blur: 24,
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 38,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade400,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  CircleAvatar(
-                    radius: 34,
-                    backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
-                    child: Text(
-                      user != null && user.displayName.isNotEmpty
-                          ? user.displayName[0].toUpperCase()
-                          : 'S',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    user?.displayName ?? 'Student User',
-                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    user?.email ?? 'student@university.edu',
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.green.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-                        ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Cloud Sync Active (Google OAuth 2.0)',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Divider(height: 1),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final isAiEnabled = AiPreferencesService.isAiEnabledNotifier.value;
+
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                child: GlassContainer(
+                  borderRadius: 28,
+                  blur: 24,
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('Cloud UID', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                      Container(
+                        width: 38,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade400,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      CircleAvatar(
+                        radius: 34,
+                        backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
+                        child: Text(
+                          user != null && user.displayName.isNotEmpty
+                              ? user.displayName[0].toUpperCase()
+                              : 'S',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       Text(
-                        user?.uid ?? 'local_dev_session',
-                        style: const TextStyle(fontSize: 12, fontFamily: 'monospace', fontWeight: FontWeight.w600),
+                        user?.displayName ?? 'Student User',
+                        style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        user?.email ?? 'student@university.edu',
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.green.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Cloud Sync Active (Google OAuth 2.0)',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Divider(height: 1),
+                      const SizedBox(height: 14),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Cloud UID', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                          Text(
+                            user?.uid ?? 'local_dev_session',
+                            style: const TextStyle(fontSize: 12, fontFamily: 'monospace', fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Optional AI Academic Assistant Toggle Setting
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: isAiEnabled ? Colors.blueAccent.withOpacity(0.08) : Colors.black.withOpacity(0.03),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: isAiEnabled ? Colors.blueAccent.withOpacity(0.3) : Colors.grey.shade300,
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: (isAiEnabled ? Colors.blueAccent : Colors.grey).withOpacity(0.12),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.auto_awesome,
+                                        color: isAiEnabled ? Colors.blueAccent : Colors.grey.shade600,
+                                        size: 18,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'AI Academic Assistant',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                                        ),
+                                        Text(
+                                          isAiEnabled ? 'Active in navigation bar' : 'Disabled (Hidden)',
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: isAiEnabled ? Colors.blueAccent.shade700 : Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                Switch(
+                                  value: isAiEnabled,
+                                  activeColor: Colors.blueAccent,
+                                  onChanged: (val) async {
+                                    await AiPreferencesService.setAiEnabled(val);
+                                    setModalState(() {});
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          duration: const Duration(seconds: 2),
+                                          backgroundColor: val ? Colors.blueAccent : Colors.grey.shade800,
+                                          content: Text(
+                                            val
+                                                ? '✓ AI Academic Assistant added to navigation'
+                                                : '✕ AI Academic Assistant removed from navigation',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Enables an intelligent study coach and workload planner grounded in your enrolled subjects.',
+                              style: TextStyle(fontSize: 11.5, color: Colors.grey.shade700, height: 1.3),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.redAccent,
+                            side: const BorderSide(color: Colors.redAccent, width: 1.2),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            await widget.authService?.signOut();
+                          },
+                          icon: const Icon(Icons.logout),
+                          label: const Text('Sign Out of LMS', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.redAccent,
-                        side: const BorderSide(color: Colors.redAccent, width: 1.2),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        await widget.authService?.signOut();
-                      },
-                      icon: const Icon(Icons.logout),
-                      label: const Text('Sign Out of LMS', style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
