@@ -129,7 +129,8 @@ Rather than enforcing rigid, single-purpose URL boxes (e.g. only GitHub or YouTu
 * **Architecture:** Multi-device synchronization with offline-first persistence cache. Partitioned by `users/{userId}/...` subcollections ensuring complete data isolation. Adheres to the Repository Pattern allowing transparent switching between cloud Firestore and in-memory test stores.
 
 ### Integration 3: Artificial Intelligence Assistant (Google Gemini API)
-* **Target Phase:** Phase 5
-* **Protocol:** RESTful HTTPS / gRPC.
-* **Architecture:** Context injection where the student's upcoming deadlines, active deliverables, and schedule constraints are formatted into structured system prompts, returning actionable schedule realignment recommendations.
+* **Status:** Implemented (Phase 5)
+* **Protocol:** RESTful HTTPS via Google Gemini 1.5 Flash (`generativelanguage.googleapis.com`) with intelligent contextual mock fallback.
+* **Architecture:** Grounded in a real-time **Academic Context Engine** (`AcademicContextEngine`) that injects the student's enrolled courses, today's lecture schedule, and pending deliverables into structured system prompts.
+* **User Control & Optionality:** Opt-in feature managed in the "Student Profile & Cloud Sync" preferences. When enabled, a 3rd navigation tab ("AI Coach") dynamically appears in the bottom glass navigation bar with Emil Kowalski tactile physics. Provides quick action chips (*"What should I focus on today?"*, *"Break down my upcoming project"*, *"Create a study timetable"*, *"Review my course workload"*).
 
