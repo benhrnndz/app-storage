@@ -53,10 +53,10 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFFF0F4F8),
-              const Color(0xFFE3EDF7),
-              Colors.blue.shade50,
+            colors: const [
+              Color(0xFFF2F7F6),
+              Color(0xFFE6F3F1),
+              Color(0xFFD6EDE9),
             ],
           ),
         ),
@@ -75,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       gradient: LinearGradient(
                         colors: [
                           theme.colorScheme.primary,
-                          Colors.blue.shade400,
+                          const Color(0xFF10B981),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -99,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Header Titles
                   Text(
-                    'Student LMS',
+                    'Syllo',
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       letterSpacing: -0.5,
@@ -127,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         _buildFeatureRow(
                           icon: Icons.calendar_month_outlined,
-                          color: Colors.blue.shade600,
+                          color: const Color(0xFF0F766E),
                           title: 'Class Schedule & Calendar',
                           subtitle: 'View timetable with opt-in calendar sync',
                         ),
@@ -137,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         _buildFeatureRow(
                           icon: Icons.folder_special_outlined,
-                          color: Colors.purple.shade600,
+                          color: const Color(0xFF10B981),
                           title: 'Coursework Portfolio',
                           subtitle: 'Store activities, repos, and video demos',
                         ),
@@ -147,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         _buildFeatureRow(
                           icon: Icons.sync_rounded,
-                          color: Colors.green.shade600,
+                          color: const Color(0xFF0D9488),
                           title: 'Cloud Cross-Device Sync',
                           subtitle: 'Switch devices seamlessly with Google login',
                         ),
