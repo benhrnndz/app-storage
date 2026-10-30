@@ -15,16 +15,16 @@ class AmbientMeshBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final baseColor = isDark ? const Color(0xFF0A0D14) : const Color(0xFFF5F7FB);
+    final baseColor = isDark ? const Color(0xFF0A1211) : const Color(0xFFF6F9F8);
     final topGlow = isDark
-        ? const Color(0xFF1E3A8A).withOpacity(0.35)
-        : const Color(0xFF3B82F6).withOpacity(0.12);
+        ? const Color(0xFF0F766E).withOpacity(0.35)
+        : const Color(0xFF0D9488).withOpacity(0.14);
     final bottomGlow = isDark
-        ? const Color(0xFF4C1D95).withOpacity(0.28)
-        : const Color(0xFF8B5CF6).withOpacity(0.09);
+        ? const Color(0xFF064E3B).withOpacity(0.30)
+        : const Color(0xFF10B981).withOpacity(0.12);
     final accentGlow = isDark
-        ? const Color(0xFF064E3B).withOpacity(0.25)
-        : const Color(0xFF06B6D4).withOpacity(0.08);
+        ? const Color(0xFF0E7490).withOpacity(0.25)
+        : const Color(0xFF14B8A6).withOpacity(0.08);
 
     return Stack(
       children: [
