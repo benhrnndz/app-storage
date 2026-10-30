@@ -50,7 +50,7 @@ void main() {
         ),
       );
 
-      expect(find.text('Student LMS'), findsOneWidget);
+      expect(find.text('Syllo'), findsOneWidget);
       expect(find.text('Continue with Google'), findsOneWidget);
     });
   });
