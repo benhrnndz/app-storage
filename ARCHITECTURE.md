@@ -114,6 +114,14 @@ Rather than enforcing rigid, single-purpose URL boxes (e.g. only GitHub or YouTu
 1. **Dynamic Link Collection**: Students can attach an arbitrary number of optional links (`List<String> links`) representing any web resource (Figma prototypes, Notion documentation, Google Drive folders, personal portfolios, code repos, or demo videos).
 2. **Binary Blob Cloud Storage**: Direct photo and file uploads (diagrams, photos of physical lab work, PDFs) are decoupled from Firestore and stored in Firebase Cloud Storage (`FirebaseStorageService`) under `users/{userId}/courses/{courseId}/attachments/`, persisting only the HTTPS download URL in Firestore. An abstract `StorageService` contract ensures mock-ability for testing and offline environments.
 
+### 4.5 Emil Kowalski Alabaster Frost Motion & Glass Architecture
+The UI incorporates Emil Kowalski's micro-interaction and tactile design principles:
+1. **Vibrant Frosted Gradient App Bar (`FrostedAppBar`)**: Luminous top headers across screens (`CoursesScreen`, `ScheduleScreen`, `AiAssistantScreen`, `CourseDetailsScreen`) utilizing `BackdropFilter` (blur 20 sigma), dual-stop gradient washes (Royal Azure `#2563EB` to Electric Indigo `#4F46E5`), and a specular highlight bottom border (`#2563EB.withOpacity(0.18)`), establishing visual depth while floating above content. In `CourseDetailsScreen`, the gradient wash dynamically adapts to the course's theme color.
+2. **Tactile Spring Physics (`BouncyTap`)**: Scale transitions with overshoot springs (`CurvedAnimation` with easeOutCubic) providing immediate tactile feedback on all cards, buttons, and chips.
+3. **Ambient Mesh (`AmbientMeshBackground`)**: Subtle floating translucent radial blobs creating background depth without jarring brightness or distraction.
+4. **Frosted Glass Containers (`GlassContainer`)**: Translucent cards featuring dual specular borders and subtle drop shadows.
+5. **Satisfying Checkbox (`SatisfyingCheckbox`)**: Multi-phase micro-animated spring-pop checkbox with scale bump and haptic-style visual pulse for deliverable task completion.
+
 ---
 
 ## 5. System Integration Points (Roadmap)
