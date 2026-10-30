@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'data/repositories/lms_repository.dart';
+import 'features/ai_assistant/services/ai_preferences_service.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/auth/services/firebase_auth_service.dart';
 import 'features/auth/widgets/auth_gate.dart';
@@ -11,6 +12,7 @@ import 'firebase_options.dart';
 void main() async {
   // Ensure Flutter engine bindings are initialized before calling platform channels
   WidgetsFlutterBinding.ensureInitialized();
+  await AiPreferencesService.init();
 
   AuthService authService;
   LmsRepository repository;
