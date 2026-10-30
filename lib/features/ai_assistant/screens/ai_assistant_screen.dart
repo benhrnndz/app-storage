@@ -187,7 +187,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   appBar: FrostedAppBar(
                     title: const Row(
                       children: [
-                        Icon(Icons.auto_awesome, color: Colors.blueAccent, size: 22),
+                        Icon(Icons.auto_awesome, color: Color(0xFF0D9488), size: 22),
                         SizedBox(width: 8),
                         Text(
                           'AI Academic Assistant',
@@ -196,9 +196,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       ],
                     ),
                     gradientColors: [
-                      const Color(0xFF4F46E5).withOpacity(0.18),
-                      const Color(0xFF7C3AED).withOpacity(0.12),
-                      const Color(0xFF2563EB).withOpacity(0.08),
+                      const Color(0xFF0F766E).withOpacity(0.20),
+                      const Color(0xFF0D9488).withOpacity(0.14),
+                      const Color(0xFF10B981).withOpacity(0.08),
                     ],
                     actions: [
                       IconButton(
