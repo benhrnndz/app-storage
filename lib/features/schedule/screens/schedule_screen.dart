@@ -285,9 +285,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 gradientColors: [
-                  const Color(0xFF2563EB).withOpacity(0.16),
-                  const Color(0xFF4F46E5).withOpacity(0.10),
-                  const Color(0xFF0D9488).withOpacity(0.06),
+                  const Color(0xFF0F766E).withOpacity(0.18),
+                  const Color(0xFF0D9488).withOpacity(0.12),
+                  const Color(0xFF10B981).withOpacity(0.07),
                 ],
                 actions: [
                   IconButton(
