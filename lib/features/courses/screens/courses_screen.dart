@@ -476,23 +476,6 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                   ],
                 ),
               ),
-              floatingActionButton: _tabController.index == 0
-                  ? Padding(
-                      padding: const EdgeInsets.only(bottom: 84),
-                      child: BouncyTap(
-                        onTap: () => _openAddCourseModal(),
-                        child: FloatingActionButton.extended(
-                          elevation: 4,
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                          onPressed: () => _openAddCourseModal(),
-                          icon: const Icon(Icons.add),
-                          label: const Text('Add Course', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    )
-                  : null,
             );
           },
         );
@@ -503,23 +486,78 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
   Widget _buildCourseList(List<Course> courses, List<Deliverable> allDeliverables, {required bool isArchived}) {
     if (courses.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(isArchived ? Icons.history_edu : Icons.folder_open, size: 52, color: Colors.grey.shade400),
-            const SizedBox(height: 10),
-            Text(
-              isArchived ? 'No past courses yet.' : 'No courses in this section.',
-              style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              isArchived
-                  ? 'Completed or archived courses will appear here in your academic portfolio.'
-                  : 'Tap "+ Add Course" to register your enrolled subjects.',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: (isArchived ? Colors.grey : Theme.of(context).colorScheme.primary).withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isArchived ? Icons.history_edu : Icons.school_outlined,
+                  size: 48,
+                  color: isArchived ? Colors.grey.shade400 : Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                isArchived ? 'No past courses yet.' : 'No courses registered yet.',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                isArchived
+                    ? 'Completed or archived courses will appear here in your academic portfolio.'
+                    : 'Add your subjects to organize activities, deliverables, and class schedules.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.3),
+              ),
+              if (!isArchived) ...[
+                const SizedBox(height: 22),
+                BouncyTap(
+                  onTap: () => _openAddCourseModal(),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Theme.of(context).colorScheme.primary,
+                          const Color(0xFF10B981),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.28),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Add Your First Course',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       );
     }
