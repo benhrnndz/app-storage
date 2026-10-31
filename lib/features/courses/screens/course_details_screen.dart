@@ -165,13 +165,23 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         child: StreamBuilder<List<Deliverable>>(
         stream: deliverablesStream,
         builder: (context, snapshot) {
-          final all = snapshot.data ?? mockDeliverables;
+          final isLoading = snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData;
+          final all = snapshot.data ?? (widget.repository != null ? const <Deliverable>[] : mockDeliverables);
           // Filter deliverables belonging to this course
           final courseDeliverables = all.where((d) => d.courseId == widget.course.id).toList();
 
           final displayedDeliverables = _selectedTypeFilter == null
               ? courseDeliverables
               : courseDeliverables.where((d) => d.type == _selectedTypeFilter).toList();
+
+          if (isLoading) {
+            return Center(
+              child: CircularProgressIndicator(
+                color: courseColor,
+                strokeWidth: 2.5,
+              ),
+            );
+          }
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
