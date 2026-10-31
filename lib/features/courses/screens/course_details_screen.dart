@@ -268,24 +268,74 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
               Expanded(
                 child: displayedDeliverables.isEmpty
                     ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey.shade400),
-                            const SizedBox(height: 10),
-                            const Text(
-                              'No deliverables recorded in this category.',
-                              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Tap "+ Add Deliverable" to store activities, repos, or video demos.',
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                          ],
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(18),
+                                decoration: BoxDecoration(
+                                  color: courseColor.withOpacity(0.09),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(Icons.inventory_2_outlined, size: 48, color: courseColor),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'No deliverables recorded in this category.',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Track activities, assignments, code repositories, or video demonstrations for this course.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.3),
+                              ),
+                              const SizedBox(height: 20),
+                              BouncyTap(
+                                onTap: () => _openAddDeliverableModal(),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        courseColor,
+                                        Theme.of(context).colorScheme.primary,
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(18),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: courseColor.withOpacity(0.28),
+                                        blurRadius: 14,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Add Deliverable',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       )
                     : ListView.builder(
+                        padding: const EdgeInsets.only(top: 8, bottom: 32),
                         itemCount: displayedDeliverables.length,
                         itemBuilder: (context, index) {
                           final item = displayedDeliverables[index];
@@ -320,21 +370,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           );
         },
       ),
-      ),
-      floatingActionButton: BouncyTap(
-        onTap: () => _openAddDeliverableModal(),
-        child: FloatingActionButton.extended(
-          elevation: 4,
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-          onPressed: () => _openAddDeliverableModal(),
-          icon: const Icon(Icons.add),
-          label: const Text(
-            'Add Deliverable',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
       ),
     );
   }
