@@ -1,4 +1,5 @@
 // test/widget_test.dart
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:student_lms/data/repositories/lms_repository.dart';
 import 'package:student_lms/features/auth/services/auth_service.dart';
@@ -37,7 +38,7 @@ void main() {
     expect(find.textContaining('ACTIVE TIMETABLE'), findsOneWidget);
   });
 
-  testWidgets('CoursesScreen hides Add Course floating and action button on Past Courses tab', (WidgetTester tester) async {
+  testWidgets('CoursesScreen keeps clean top bar action and hides it on Past Courses tab with zero FAB clutter', (WidgetTester tester) async {
     final authService = MockAuthService(startLoggedIn: true);
     final repository = LocalLmsRepository();
 
@@ -47,21 +48,24 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    // On Active Courses tab: Add Course is visible
-    expect(find.text('Add Course'), findsOneWidget);
+    // Verify floating action button is removed to eliminate UI clutter
+    expect(find.byType(FloatingActionButton), findsNothing);
+
+    // On Active Courses tab: top bar Add Course action is visible
+    expect(find.byTooltip('Add Course'), findsOneWidget);
 
     // Switch to Past Courses tab
     await tester.tap(find.text('Past Courses'));
     await tester.pumpAndSettle();
 
-    // On Past Courses tab: Add Course is hidden
-    expect(find.text('Add Course'), findsNothing);
+    // On Past Courses tab: Add Course action is hidden
+    expect(find.byTooltip('Add Course'), findsNothing);
 
     // Switch back to Active Courses tab
     await tester.tap(find.text('Active Courses'));
     await tester.pumpAndSettle();
 
-    // Add Course is restored
-    expect(find.text('Add Course'), findsOneWidget);
+    // Add Course action is restored in top bar
+    expect(find.byTooltip('Add Course'), findsOneWidget);
   });
 }
