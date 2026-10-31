@@ -271,12 +271,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return StreamBuilder<List<Course>>(
       stream: coursesStream,
       builder: (context, courseSnapshot) {
-        final courses = courseSnapshot.data ?? mockCourses;
+        final courses = courseSnapshot.data ?? (widget.repository != null ? const <Course>[] : mockCourses);
 
         return StreamBuilder<List<ScheduleSlot>>(
           stream: schedulesStream,
           builder: (context, scheduleSnapshot) {
-            final slots = scheduleSnapshot.data ?? mockSchedules;
+            final isLoading = (courseSnapshot.connectionState == ConnectionState.waiting && !courseSnapshot.hasData) ||
+                (scheduleSnapshot.connectionState == ConnectionState.waiting && !scheduleSnapshot.hasData);
+            final slots = scheduleSnapshot.data ?? (widget.repository != null ? const <ScheduleSlot>[] : mockSchedules);
 
             return Scaffold(
               appBar: FrostedAppBar(
@@ -304,10 +306,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ],
               ),
               body: AmbientMeshBackground(
-                child: Column(
-                  children: [
-                    // View Switcher: "Calendar Agenda" vs "Timetable Settings"
-                    Padding(
+                child: isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.primary,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : Column(
+                        children: [
+                          // View Switcher: "Calendar Agenda" vs "Timetable Settings"
+                          Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: SegmentedButton<int>(
                         segments: const [
