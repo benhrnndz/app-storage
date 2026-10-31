@@ -171,17 +171,17 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     return StreamBuilder<List<Course>>(
       stream: coursesStream,
       builder: (context, courseSnapshot) {
-        final courses = courseSnapshot.data ?? mockCourses;
+        final courses = courseSnapshot.data ?? (widget.repository != null ? const <Course>[] : mockCourses);
 
         return StreamBuilder<List<Deliverable>>(
           stream: deliverablesStream,
           builder: (context, deliverableSnapshot) {
-            final deliverables = deliverableSnapshot.data ?? mockDeliverables;
+            final deliverables = deliverableSnapshot.data ?? (widget.repository != null ? const <Deliverable>[] : mockDeliverables);
 
             return StreamBuilder<List<ScheduleSlot>>(
               stream: schedulesStream,
               builder: (context, scheduleSnapshot) {
-                final schedules = scheduleSnapshot.data ?? mockSchedules;
+                final schedules = scheduleSnapshot.data ?? (widget.repository != null ? const <ScheduleSlot>[] : mockSchedules);
 
                 return Scaffold(
                   appBar: FrostedAppBar(
