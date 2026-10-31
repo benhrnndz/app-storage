@@ -416,12 +416,13 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
     return StreamBuilder<List<Deliverable>>(
       stream: deliverablesStream,
       builder: (context, delivSnapshot) {
-        final allDeliverables = delivSnapshot.data ?? mockDeliverables;
+        final allDeliverables = delivSnapshot.data ?? (widget.repository != null ? const <Deliverable>[] : mockDeliverables);
 
         return StreamBuilder<List<Course>>(
           stream: coursesStream,
           builder: (context, snapshot) {
-            final courses = snapshot.data ?? mockCourses;
+            final isLoading = snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData;
+            final courses = snapshot.data ?? (widget.repository != null ? const <Course>[] : mockCourses);
             final activeCourses = courses.where((c) => !c.isArchived).toList();
             final archivedCourses = courses.where((c) => c.isArchived).toList();
 
@@ -468,13 +469,20 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                 ),
               ),
               body: AmbientMeshBackground(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildCourseList(activeCourses, allDeliverables, isArchived: false),
-                    _buildCourseList(archivedCourses, allDeliverables, isArchived: true),
-                  ],
-                ),
+                child: isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.primary,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildCourseList(activeCourses, allDeliverables, isArchived: false),
+                          _buildCourseList(archivedCourses, allDeliverables, isArchived: true),
+                        ],
+                      ),
               ),
             );
           },
