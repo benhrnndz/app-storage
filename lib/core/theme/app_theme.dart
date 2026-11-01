@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 /// Implements Option 1: Biophilic Focus & Endurance color palette grounded
 /// in cognitive ergonomics research (Kaplan Attention Restoration Theory &
 /// UBC learning performance studies) to maximize study focus and minimize eye strain.
+/// Supports seamless Day (light) and Night (dark) themes with frosted glass aesthetics.
 class AppTheme {
   // Option 1: Biophilic Focus & Endurance Palette
   static const Color primaryTeal = Color(0xFF0F766E); // Deep Oceanic Teal (Parasympathetic focus)
@@ -17,11 +18,18 @@ class AppTheme {
   static const Color dangerRose = Color(0xFFF43F5E); // Rose Coral
   static const Color canvasLight = Color(0xFFF6F9F8); // Alabaster Mint (Glare-free canvas)
 
+  // Night Theme (Dark Mode) Accents
+  static const Color canvasDark = Color(0xFF0A1211); // Deep obsidian teal
+  static const Color surfaceDark = Color(0xFF111E1D); // Dark frosted glass surface
+  static const Color primaryTealDark = Color(0xFF2DD4BF); // Vibrant mint teal for dark contrast
+  static const Color secondarySageDark = Color(0xFF34D399); // Luminous sage for dark contrast
+
   // Backward-compatibility aliases
   static const Color primaryBlue = primaryTeal;
   static const Color accentIndigo = secondarySage;
   static const Color successEmerald = secondarySage;
 
+  /// Day Version (Light Mode)
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: primaryTeal,
@@ -34,6 +42,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      brightness: Brightness.light,
       scaffoldBackgroundColor: canvasLight,
       colorScheme: colorScheme,
       appBarTheme: const AppBarTheme(
@@ -47,6 +56,7 @@ class AppTheme {
           fontWeight: FontWeight.bold,
           letterSpacing: -0.3,
         ),
+        iconTheme: IconThemeData(color: Color(0xFF0F172A)),
       ),
       tabBarTheme: const TabBarThemeData(
         labelColor: primaryTeal,
@@ -71,6 +81,75 @@ class AppTheme {
         backgroundColor: primaryTeal,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+    );
+  }
+
+  /// Night Version (Dark Mode)
+  static ThemeData get darkTheme {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: primaryTealDark,
+      primary: primaryTealDark,
+      secondary: secondarySageDark,
+      tertiary: accentTeal,
+      surface: surfaceDark,
+      brightness: Brightness.dark,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: canvasDark,
+      colorScheme: colorScheme,
+      appBarTheme: const AppBarTheme(
+        centerTitle: false,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          letterSpacing: -0.3,
+        ),
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      tabBarTheme: const TabBarThemeData(
+        labelColor: primaryTealDark,
+        unselectedLabelColor: Colors.white60,
+        indicatorColor: primaryTealDark,
+        labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
+      ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        elevation: 3,
+        backgroundColor: primaryTealDark,
+        foregroundColor: Colors.black87,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: Colors.white12,
+        thickness: 1,
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
