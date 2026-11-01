@@ -345,17 +345,14 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  /// Bespoke 3D Syllo Brand Emblem Logo with tight framing, zero loose padding,
-  /// and seamless dark/light adaptation.
+  /// Bespoke 3D Syllo Brand Emblem Logo (syllo_logo.jpg) with tight framing,
+  /// deep obsidian glass canvas, zero loose padding, and specular border glow.
   Widget _buildBrandEmblem(ThemeData theme, bool isDark, {required double size}) {
     final borderRadius = BorderRadius.circular(size * 0.28);
-    final logoAsset = isDark
-        ? 'assets/images/syllo_logo_dark.jpg'
-        : 'assets/images/syllo_logo_light.jpg';
-    final tileColor = isDark ? const Color(0xFF0A1211) : Colors.white;
+    const tileColor = Color(0xFF0A1211); // Deep obsidian background matches syllo_logo.jpg seamlessly
     final borderColor = isDark
-        ? const Color(0xFF2DD4BF).withOpacity(0.32)
-        : const Color(0xFF0F766E).withOpacity(0.18);
+        ? const Color(0xFF2DD4BF).withOpacity(0.35)
+        : const Color(0xFF0F766E).withOpacity(0.24);
 
     return Container(
       width: size,
@@ -366,50 +363,42 @@ class _LoginScreenState extends State<LoginScreen> {
         boxShadow: [
           BoxShadow(
             color: (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E))
-                .withOpacity(isDark ? 0.32 : 0.16),
-            blurRadius: size * 0.35,
+                .withOpacity(isDark ? 0.32 : 0.18),
+            blurRadius: size * 0.36,
             offset: Offset(0, size * 0.10),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.40 : 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: Colors.black.withOpacity(isDark ? 0.45 : 0.14),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Clipped tight image layer
+          // Clipped tight 3D emblem
           ClipRRect(
             borderRadius: borderRadius,
-            child: Container(
-              color: tileColor,
-              padding: EdgeInsets.all(size * 0.05),
-              child: Image.asset(
-                logoAsset,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => Image.asset(
-                  'assets/images/syllo_logo.jpg',
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          theme.colorScheme.primary,
-                          const Color(0xFF10B981),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: borderRadius,
-                    ),
-                    child: Icon(
-                      Icons.school_rounded,
-                      size: size * 0.55,
-                      color: Colors.white,
-                    ),
+            child: Image.asset(
+              'assets/images/syllo_logo.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      theme.colorScheme.primary,
+                      const Color(0xFF10B981),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  borderRadius: borderRadius,
+                ),
+                child: Icon(
+                  Icons.school_rounded,
+                  size: size * 0.55,
+                  color: Colors.white,
                 ),
               ),
             ),
