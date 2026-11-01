@@ -1,8 +1,9 @@
 // lib/core/widgets/ambient_background.dart
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 /// Ambient mesh glow background that provides rich color refraction for frosted glass containers.
+///
+/// Features smooth continuous transitions between daylight alabaster-mint and nocturnal obsidian-teal.
 class AmbientMeshBackground extends StatelessWidget {
   final Widget child;
 
@@ -17,29 +18,38 @@ class AmbientMeshBackground extends StatelessWidget {
 
     final baseColor = isDark ? const Color(0xFF0A1211) : const Color(0xFFF6F9F8);
     final topGlow = isDark
-        ? const Color(0xFF0F766E).withOpacity(0.35)
+        ? const Color(0xFF0F766E).withOpacity(0.38)
         : const Color(0xFF0D9488).withOpacity(0.14);
     final bottomGlow = isDark
-        ? const Color(0xFF064E3B).withOpacity(0.30)
+        ? const Color(0xFF064E3B).withOpacity(0.32)
         : const Color(0xFF10B981).withOpacity(0.12);
     final accentGlow = isDark
-        ? const Color(0xFF0E7490).withOpacity(0.25)
+        ? const Color(0xFF0E7490).withOpacity(0.28)
         : const Color(0xFF14B8A6).withOpacity(0.08);
+
+    const animationDuration = Duration(milliseconds: 650);
+    const animationCurve = Curves.easeInOutCubic;
 
     return Stack(
       children: [
-        // Base solid color
+        // Base solid color with smooth cross-fade
         Positioned.fill(
-          child: Container(color: baseColor),
+          child: AnimatedContainer(
+            duration: animationDuration,
+            curve: animationCurve,
+            color: baseColor,
+          ),
         ),
 
-        // Top-right ambient blob
+        // Top-right ambient blob - blooms slightly outward in night mode
         Positioned(
-          top: -120,
-          right: -80,
-          child: Container(
-            width: 380,
-            height: 380,
+          top: isDark ? -110 : -130,
+          right: isDark ? -70 : -90,
+          child: AnimatedContainer(
+            duration: animationDuration,
+            curve: animationCurve,
+            width: isDark ? 410 : 370,
+            height: isDark ? 410 : 370,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
@@ -52,11 +62,13 @@ class AmbientMeshBackground extends StatelessWidget {
 
         // Bottom-left ambient blob
         Positioned(
-          bottom: -100,
-          left: -80,
-          child: Container(
-            width: 360,
-            height: 360,
+          bottom: isDark ? -90 : -110,
+          left: isDark ? -70 : -90,
+          child: AnimatedContainer(
+            duration: animationDuration,
+            curve: animationCurve,
+            width: isDark ? 390 : 350,
+            height: isDark ? 390 : 350,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
@@ -69,11 +81,13 @@ class AmbientMeshBackground extends StatelessWidget {
 
         // Mid-accent blob
         Positioned(
-          top: 300,
-          left: -60,
-          child: Container(
-            width: 280,
-            height: 280,
+          top: isDark ? 290 : 310,
+          left: isDark ? -50 : -70,
+          child: AnimatedContainer(
+            duration: animationDuration,
+            curve: animationCurve,
+            width: isDark ? 300 : 270,
+            height: isDark ? 300 : 270,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: RadialGradient(
