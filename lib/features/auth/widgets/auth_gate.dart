@@ -23,6 +23,7 @@ class AuthGate extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<AuthUser?>(
       stream: authService.authStateChanges,
+      initialData: authService.currentUser,
       builder: (context, snapshot) {
         // While checking existing session cache
         if (snapshot.connectionState == ConnectionState.waiting) {
