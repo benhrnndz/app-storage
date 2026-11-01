@@ -47,11 +47,32 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   bool _bannerDismissed = false;
   int _reminderMinutes = 15;
   Timer? _reminderTimer;
+  Stream<List<Course>>? _coursesStream;
+  Stream<List<ScheduleSlot>>? _schedulesStream;
 
   @override
   void initState() {
     super.initState();
+    _initStreams();
     _loadNotificationPreferences();
+  }
+
+  void _initStreams() {
+    _coursesStream = widget.repository != null
+        ? widget.repository!.watchCourses(_userId)
+        : Stream.value(mockCourses);
+    _schedulesStream = widget.repository != null
+        ? widget.repository!.watchSchedules(_userId)
+        : Stream.value(mockSchedules);
+  }
+
+  @override
+  void didUpdateWidget(ScheduleScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository ||
+        oldWidget.userId != widget.userId) {
+      _initStreams();
+    }
   }
 
   @override
@@ -262,13 +283,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final coursesStream = widget.repository != null
-        ? widget.repository!.watchCourses(_userId)
-        : Stream.value(mockCourses);
+    // Re-use initialized streams to prevent duplicate Firestore subscriptions on UI redraws
+    final coursesStream = _coursesStream ??
+        (widget.repository != null
+            ? widget.repository!.watchCourses(_userId)
+            : Stream.value(mockCourses));
 
-    final schedulesStream = widget.repository != null
-        ? widget.repository!.watchSchedules(_userId)
-        : Stream.value(mockSchedules);
+    final schedulesStream = _schedulesStream ??
+        (widget.repository != null
+            ? widget.repository!.watchSchedules(_userId)
+            : Stream.value(mockSchedules));
 
     return StreamBuilder<List<Course>>(
       stream: coursesStream,
