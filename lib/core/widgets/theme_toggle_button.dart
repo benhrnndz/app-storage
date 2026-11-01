@@ -25,44 +25,46 @@ class ThemeToggleButton extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final tooltip = isDark ? 'Switch to Day Mode' : 'Switch to Night Version';
 
-    final iconWidget = AnimatedSwitcher(
-      duration: const Duration(milliseconds: 500),
-      transitionBuilder: (Widget child, Animation<double> animation) {
-        final isDarkChild = child.key == const ValueKey('light_mode_icon');
-        return RotationTransition(
-          turns: Tween<double>(
-            begin: isDarkChild ? 0.35 : -0.35,
-            end: 0.0,
-          ).animate(
-            CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
-          ),
-          child: ScaleTransition(
-            scale: Tween<double>(
-              begin: 0.45,
-              end: 1.0,
+    final iconWidget = RepaintBoundary(
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          final isDarkChild = child.key == const ValueKey('light_mode_icon');
+          return RotationTransition(
+            turns: Tween<double>(
+              begin: isDarkChild ? 0.28 : -0.28,
+              end: 0.0,
             ).animate(
-              CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
             ),
-            child: FadeTransition(
-              opacity: animation,
-              child: child,
+            child: ScaleTransition(
+              scale: Tween<double>(
+                begin: 0.55,
+                end: 1.0,
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+              ),
+              child: FadeTransition(
+                opacity: animation,
+                child: child,
+              ),
             ),
-          ),
-        );
-      },
-      child: isDark
-          ? Icon(
-              Icons.light_mode_rounded,
-              key: const ValueKey('light_mode_icon'),
-              size: size,
-              color: const Color(0xFF2DD4BF),
-            )
-          : Icon(
-              Icons.dark_mode_rounded,
-              key: const ValueKey('dark_mode_icon'),
-              size: size,
-              color: const Color(0xFF0F766E),
-            ),
+          );
+        },
+        child: isDark
+            ? Icon(
+                Icons.light_mode_rounded,
+                key: const ValueKey('light_mode_icon'),
+                size: size,
+                color: const Color(0xFF2DD4BF),
+              )
+            : Icon(
+                Icons.dark_mode_rounded,
+                key: const ValueKey('dark_mode_icon'),
+                size: size,
+                color: const Color(0xFF0F766E),
+              ),
+      ),
     );
 
     if (!showBackground) {
