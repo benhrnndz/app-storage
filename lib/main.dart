@@ -61,6 +61,8 @@ class StudentLmsApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: currentThemeMode,
+          themeAnimationDuration: const Duration(milliseconds: 550),
+          themeAnimationCurve: Curves.easeInOutCubic,
           home: AuthGate(
             authService: authService,
             repository: repository,
