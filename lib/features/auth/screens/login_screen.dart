@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/theme_service.dart';
 import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/theme_toggle_button.dart';
 import '../services/auth_service.dart';
 
 /// The iOS glassmorphic sign-in screen allowing students to log in via Google OAuth.
@@ -50,7 +51,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      body: Container(
+      body: AnimatedContainer(
+        duration: const Duration(milliseconds: 650),
+        curve: Curves.easeInOutCubic,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -243,28 +246,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               // Top-Right Quick Theme Toggle (Sun / Moon) on top of the z-stack
-              Positioned(
+              const Positioned(
                 top: 10,
                 right: 16,
-                child: GlassContainer(
-                  borderRadius: 20,
-                  blur: 16,
-                  color: isDark
-                      ? const Color(0xFF162524).withOpacity(0.85)
-                      : Colors.white.withOpacity(0.85),
-                  borderColor: isDark
-                      ? const Color(0xFF2DD4BF).withOpacity(0.3)
-                      : Colors.white.withOpacity(0.7),
-                  child: IconButton(
-                    icon: Icon(
-                      isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                      size: 20,
-                      color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E),
-                    ),
-                    tooltip: isDark ? 'Switch to Day Mode' : 'Switch to Night Version',
-                    onPressed: () => ThemeService.toggleTheme(),
-                  ),
-                ),
+                child: ThemeToggleButton(showBackground: true),
               ),
             ],
           ),
