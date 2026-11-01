@@ -59,12 +59,12 @@ class FrostedAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     final effectiveBaseColor = baseColor ??
         (isDark
-            ? const Color(0xFF0F172A).withOpacity(0.80)
+            ? const Color(0xFF0C1615).withOpacity(0.85)
             : Colors.white.withOpacity(0.84));
 
     final effectiveBorderColor = borderColor ??
         (isDark
-            ? Colors.white.withOpacity(0.12)
+            ? const Color(0xFF2DD4BF).withOpacity(0.18)
             : AppTheme.accentTeal.withOpacity(0.18));
 
     return AppBar(
@@ -82,7 +82,9 @@ class FrostedAppBar extends StatelessWidget implements PreferredSizeWidget {
       flexibleSpace: ClipRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: Container(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 550),
+            curve: Curves.easeInOutCubic,
             decoration: BoxDecoration(
               color: effectiveBaseColor,
               gradient: LinearGradient(
