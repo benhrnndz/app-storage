@@ -44,8 +44,8 @@ class GlassContainer extends StatelessWidget {
             : Colors.white.withOpacity(0.85));
 
     Widget content = AnimatedContainer(
-      duration: const Duration(milliseconds: 550),
-      curve: Curves.easeInOutCubic,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
       padding: padding,
       decoration: BoxDecoration(
         color: glassColor,
@@ -78,13 +78,15 @@ class GlassContainer extends StatelessWidget {
       );
     }
 
-    return Container(
-      margin: margin,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: content,
+    return RepaintBoundary(
+      child: Container(
+        margin: margin,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(borderRadius),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+            child: content,
+          ),
         ),
       ),
     );
