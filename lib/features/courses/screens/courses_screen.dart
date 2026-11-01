@@ -38,12 +38,33 @@ class CoursesScreen extends StatefulWidget {
 class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String get _userId => widget.currentUser?.uid ?? 'local_user';
+  Stream<List<Course>>? _coursesStream;
+  Stream<List<Deliverable>>? _deliverablesStream;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_handleTabSelection);
+    _initStreams();
+  }
+
+  void _initStreams() {
+    _coursesStream = widget.repository != null
+        ? widget.repository!.watchCourses(_userId)
+        : Stream.value(mockCourses);
+    _deliverablesStream = widget.repository != null
+        ? widget.repository!.watchDeliverables(_userId)
+        : Stream.value(mockDeliverables);
+  }
+
+  @override
+  void didUpdateWidget(CoursesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository ||
+        oldWidget.currentUser?.uid != widget.currentUser?.uid) {
+      _initStreams();
+    }
   }
 
   void _handleTabSelection() {
@@ -406,14 +427,16 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    // If repository is provided, stream real-time courses; otherwise fallback to local mock
-    final coursesStream = widget.repository != null
-        ? widget.repository!.watchCourses(_userId)
-        : Stream.value(mockCourses);
+    // Re-use initialized streams to prevent duplicate Firestore subscriptions on UI redraws
+    final coursesStream = _coursesStream ??
+        (widget.repository != null
+            ? widget.repository!.watchCourses(_userId)
+            : Stream.value(mockCourses));
 
-    final deliverablesStream = widget.repository != null
-        ? widget.repository!.watchDeliverables(_userId)
-        : Stream.value(mockDeliverables);
+    final deliverablesStream = _deliverablesStream ??
+        (widget.repository != null
+            ? widget.repository!.watchDeliverables(_userId)
+            : Stream.value(mockDeliverables));
 
     return StreamBuilder<List<Deliverable>>(
       stream: deliverablesStream,
