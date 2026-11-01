@@ -127,13 +127,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }) {
     final isSelected = _currentIndex == index;
     final primaryColor = Theme.of(context).colorScheme.primary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final unselectedColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
 
     return InkWell(
       onTap: () => setState(() => _currentIndex = index),
       borderRadius: BorderRadius.circular(24),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 240),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeInOutCubic,
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? primaryColor.withOpacity(0.12) : Colors.transparent,
@@ -145,7 +147,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             Icon(
               isSelected ? activeIcon : icon,
               size: 19,
-              color: isSelected ? primaryColor : Colors.grey.shade600,
+              color: isSelected ? primaryColor : unselectedColor,
             ),
             const SizedBox(width: 6),
             Flexible(
@@ -154,7 +156,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected ? primaryColor : Colors.grey.shade700,
+                  color: isSelected ? primaryColor : unselectedColor,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
