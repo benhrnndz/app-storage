@@ -89,5 +89,38 @@ void main() {
       expect(ThemeService.isDarkMode, false);
       expect(find.byTooltip('Switch to Night Version'), findsWidgets);
     });
+
+    testWidgets('Tapping theme toggle button on LoginScreen toggles Day and Night modes', (WidgetTester tester) async {
+      final authService = MockAuthService(startLoggedIn: false);
+      final repository = LocalLmsRepository();
+
+      await tester.pumpWidget(StudentLmsApp(
+        authService: authService,
+        repository: repository,
+      ));
+      await tester.pumpAndSettle();
+
+      // On LoginScreen, verify Google sign in is visible
+      expect(find.text('Continue with Google'), findsOneWidget);
+
+      // Verify theme toggle is present on LoginScreen
+      expect(find.byTooltip('Switch to Night Version'), findsOneWidget);
+
+      // Tap theme toggle button
+      await tester.tap(find.byTooltip('Switch to Night Version'));
+      await tester.pumpAndSettle();
+
+      // Verified dark mode active
+      expect(ThemeService.isDarkMode, true);
+      expect(find.byTooltip('Switch to Day Mode'), findsOneWidget);
+
+      // Tap again to restore daylight
+      await tester.tap(find.byTooltip('Switch to Day Mode'));
+      await tester.pumpAndSettle();
+
+      expect(ThemeService.isDarkMode, false);
+      expect(find.byTooltip('Switch to Night Version'), findsOneWidget);
+    });
   });
 }
+
