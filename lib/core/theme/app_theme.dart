@@ -29,8 +29,13 @@ class AppTheme {
   static const Color accentIndigo = secondarySage;
   static const Color successEmerald = secondarySage;
 
-  /// Day Version (Light Mode)
-  static ThemeData get lightTheme {
+  /// Pre-computed, memoized Day Version (Light Mode)
+  static final ThemeData lightTheme = _buildLightTheme();
+
+  /// Pre-computed, memoized Night Version (Dark Mode)
+  static final ThemeData darkTheme = _buildDarkTheme();
+
+  static ThemeData _buildLightTheme() {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: primaryTeal,
       primary: primaryTeal,
@@ -94,8 +99,7 @@ class AppTheme {
     );
   }
 
-  /// Night Version (Dark Mode)
-  static ThemeData get darkTheme {
+  static ThemeData _buildDarkTheme() {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: primaryTealDark,
       primary: primaryTealDark,
