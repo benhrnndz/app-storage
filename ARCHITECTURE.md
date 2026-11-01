@@ -127,6 +127,7 @@ The UI incorporates Emil Kowalski's micro-interaction and tactile design princip
 4. **Ambient Mesh (`AmbientMeshBackground`)**: Subtle floating translucent biophilic teal, sage, and mint blobs creating background depth without jarring brightness or distraction.
 5. **Frosted Glass Containers (`GlassContainer`)**: Translucent cards featuring dual specular borders and subtle drop shadows.
 6. **Satisfying Checkbox (`SatisfyingCheckbox`)**: Multi-phase micro-animated spring-pop checkbox with scale bump and haptic-style visual pulse for deliverable task completion.
+7. **Night Version (Dark Mode) Engine (`ThemeService`)**: Persistent Day/Night theme toggling with SharedPreferences caching. Night mode pairs deep obsidian canvas (`#0A1211`) and dark frosted glass (`#111E1D` with 14% white specular borders) with high-contrast luminous mint teal (`#2DD4BF`), allowing restful late-night study sessions without digital glare. Reactive `ValueNotifier<ThemeMode>` delivers immediate zero-reload UI transformations.
 
 ---
 
