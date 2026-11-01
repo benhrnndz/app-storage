@@ -52,8 +52,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       body: AnimatedContainer(
-        duration: const Duration(milliseconds: 650),
-        curve: Curves.easeInOutCubic,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
