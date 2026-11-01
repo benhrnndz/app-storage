@@ -1,5 +1,6 @@
 // lib/features/courses/screens/courses_screen.dart
 import 'package:flutter/material.dart';
+import '../../../core/theme/theme_service.dart';
 import '../../../core/widgets/ambient_background.dart';
 import '../../../core/widgets/bouncy_tap.dart';
 import '../../../core/widgets/frosted_app_bar.dart';
@@ -292,6 +293,97 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                       ),
                       const SizedBox(height: 16),
 
+                      // Night Version (Dark Mode) Setting Card
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: ThemeService.isDarkMode
+                              ? theme.colorScheme.primary.withOpacity(0.12)
+                              : Colors.black.withOpacity(0.03),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: ThemeService.isDarkMode
+                                ? theme.colorScheme.primary.withOpacity(0.35)
+                                : Colors.grey.shade300,
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: (ThemeService.isDarkMode ? theme.colorScheme.primary : Colors.grey).withOpacity(0.12),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        ThemeService.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                                        color: ThemeService.isDarkMode ? theme.colorScheme.primary : Colors.grey.shade600,
+                                        size: 18,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Night Version',
+                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                                        ),
+                                        Text(
+                                          ThemeService.isDarkMode ? 'Active (Restful night focus)' : 'Off (Alabaster daylight)',
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: ThemeService.isDarkMode ? theme.colorScheme.primary : Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                Switch(
+                                  value: ThemeService.isDarkMode,
+                                  activeColor: theme.colorScheme.primary,
+                                  onChanged: (val) async {
+                                    await ThemeService.setThemeMode(val ? ThemeMode.dark : ThemeMode.light);
+                                    setModalState(() {});
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          duration: const Duration(seconds: 2),
+                                          backgroundColor: val ? const Color(0xFF111E1D) : Colors.grey.shade800,
+                                          content: Text(
+                                            val
+                                                ? '🌙 Night version enabled'
+                                                : '☀️ Daylight version enabled',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Deep obsidian and biophilic teal contrast designed to reduce eye strain during late-night study sessions.',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: ThemeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
                       // Optional AI Academic Assistant Toggle Setting
                       Container(
                         padding: const EdgeInsets.all(14),
@@ -450,6 +542,18 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                     ),
                     tooltip: 'Student Profile & Cloud Sync',
                     onPressed: _showProfileModal,
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Theme.of(context).brightness == Brightness.dark
+                          ? Icons.light_mode_rounded
+                          : Icons.dark_mode_rounded,
+                      size: 21,
+                    ),
+                    tooltip: Theme.of(context).brightness == Brightness.dark
+                        ? 'Switch to Day Mode'
+                        : 'Switch to Night Version',
+                    onPressed: () => ThemeService.toggleTheme(),
                   ),
                   if (_tabController.index == 0)
                     IconButton(
