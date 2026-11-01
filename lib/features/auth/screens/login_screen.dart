@@ -139,8 +139,8 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildBrandEmblem(theme, isDark, size: 84),
-          const SizedBox(height: 20),
+          _buildBrandEmblem(theme, isDark, size: 56),
+          const SizedBox(height: 16),
           _buildBrandTitles(theme, isDark),
           const SizedBox(height: 28),
           _buildFeatureCard(theme, isDark),
@@ -161,8 +161,8 @@ class _LoginScreenState extends State<LoginScreen> {
         // Brand Mark & Tagline
         Row(
           children: [
-            _buildBrandEmblem(theme, isDark, size: 52),
-            const SizedBox(width: 14),
+            _buildBrandEmblem(theme, isDark, size: 40),
+            const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -296,7 +296,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildBrandEmblem(theme, isDark, size: 64),
+              _buildBrandEmblem(theme, isDark, size: 48),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -368,9 +368,9 @@ class _LoginScreenState extends State<LoginScreen> {
             offset: Offset(0, size * 0.10),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.45 : 0.14),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(isDark ? 0.40 : 0.12),
+            blurRadius: size * 0.18,
+            offset: Offset(0, size * 0.06),
           ),
         ],
       ),
@@ -412,7 +412,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   borderRadius: borderRadius,
                   border: Border.all(
                     color: borderColor,
-                    width: 1.2,
+                    width: 1.0,
                   ),
                 ),
               ),
