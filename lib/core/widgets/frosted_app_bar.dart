@@ -83,8 +83,8 @@ class FrostedAppBar extends StatelessWidget implements PreferredSizeWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 550),
-            curve: Curves.easeInOutCubic,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
             decoration: BoxDecoration(
               color: effectiveBaseColor,
               gradient: LinearGradient(
