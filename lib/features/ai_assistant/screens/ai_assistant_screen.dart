@@ -1,5 +1,6 @@
 // lib/features/ai_assistant/screens/ai_assistant_screen.dart
 import 'package:flutter/material.dart';
+import '../../../core/theme/theme_service.dart';
 import '../../../core/widgets/ambient_background.dart';
 import '../../../core/widgets/bouncy_tap.dart';
 import '../../../core/widgets/frosted_app_bar.dart';
@@ -201,6 +202,18 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       const Color(0xFF10B981).withOpacity(0.08),
                     ],
                     actions: [
+                      IconButton(
+                        icon: Icon(
+                          Theme.of(context).brightness == Brightness.dark
+                              ? Icons.light_mode_rounded
+                              : Icons.dark_mode_rounded,
+                          size: 20,
+                        ),
+                        tooltip: Theme.of(context).brightness == Brightness.dark
+                            ? 'Switch to Day Mode'
+                            : 'Switch to Night Version',
+                        onPressed: () => ThemeService.toggleTheme(),
+                      ),
                       IconButton(
                         icon: const Icon(Icons.refresh_outlined, size: 20),
                         tooltip: 'Reset Conversation',
