@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 
 /// Ambient mesh glow background that provides rich color refraction for frosted glass containers.
 ///
-/// Features smooth continuous transitions between daylight alabaster-mint and nocturnal obsidian-teal.
+/// Employs a dual-layer hardware-accelerated cross-fade between day and night meshes
+/// to achieve zero-lag, butter-smooth 60fps transitions.
 class AmbientMeshBackground extends StatelessWidget {
   final Widget child;
 
@@ -16,84 +17,23 @@ class AmbientMeshBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final baseColor = isDark ? const Color(0xFF0A1211) : const Color(0xFFF6F9F8);
-    final topGlow = isDark
-        ? const Color(0xFF0F766E).withOpacity(0.38)
-        : const Color(0xFF0D9488).withOpacity(0.14);
-    final bottomGlow = isDark
-        ? const Color(0xFF064E3B).withOpacity(0.32)
-        : const Color(0xFF10B981).withOpacity(0.12);
-    final accentGlow = isDark
-        ? const Color(0xFF0E7490).withOpacity(0.28)
-        : const Color(0xFF14B8A6).withOpacity(0.08);
-
-    const animationDuration = Duration(milliseconds: 650);
-    const animationCurve = Curves.easeInOutCubic;
-
     return Stack(
       children: [
-        // Base solid color with smooth cross-fade
+        // Constant Day Ambient Canvas (cached in display list)
+        const Positioned.fill(
+          child: RepaintBoundary(
+            child: _DayAmbientMesh(),
+          ),
+        ),
+
+        // Night Ambient Canvas cross-fading smoothly with GPU alpha interpolation
         Positioned.fill(
-          child: AnimatedContainer(
-            duration: animationDuration,
-            curve: animationCurve,
-            color: baseColor,
-          ),
-        ),
-
-        // Top-right ambient blob - blooms slightly outward in night mode
-        Positioned(
-          top: isDark ? -110 : -130,
-          right: isDark ? -70 : -90,
-          child: AnimatedContainer(
-            duration: animationDuration,
-            curve: animationCurve,
-            width: isDark ? 410 : 370,
-            height: isDark ? 410 : 370,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [topGlow, topGlow.withOpacity(0.0)],
-                radius: 0.7,
-              ),
-            ),
-          ),
-        ),
-
-        // Bottom-left ambient blob
-        Positioned(
-          bottom: isDark ? -90 : -110,
-          left: isDark ? -70 : -90,
-          child: AnimatedContainer(
-            duration: animationDuration,
-            curve: animationCurve,
-            width: isDark ? 390 : 350,
-            height: isDark ? 390 : 350,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [bottomGlow, bottomGlow.withOpacity(0.0)],
-                radius: 0.7,
-              ),
-            ),
-          ),
-        ),
-
-        // Mid-accent blob
-        Positioned(
-          top: isDark ? 290 : 310,
-          left: isDark ? -50 : -70,
-          child: AnimatedContainer(
-            duration: animationDuration,
-            curve: animationCurve,
-            width: isDark ? 300 : 270,
-            height: isDark ? 300 : 270,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [accentGlow, accentGlow.withOpacity(0.0)],
-                radius: 0.7,
-              ),
+          child: RepaintBoundary(
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 320),
+              curve: Curves.easeOutCubic,
+              opacity: isDark ? 1.0 : 0.0,
+              child: const _NightAmbientMesh(),
             ),
           ),
         ),
@@ -107,3 +47,132 @@ class AmbientMeshBackground extends StatelessWidget {
   }
 }
 
+class _DayAmbientMesh extends StatelessWidget {
+  const _DayAmbientMesh();
+
+  @override
+  Widget build(BuildContext context) {
+    const baseColor = Color(0xFFF6F9F8);
+    final topGlow = const Color(0xFF0D9488).withOpacity(0.14);
+    final bottomGlow = const Color(0xFF10B981).withOpacity(0.12);
+    final accentGlow = const Color(0xFF14B8A6).withOpacity(0.08);
+
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Container(color: baseColor),
+        ),
+        Positioned(
+          top: -120,
+          right: -80,
+          child: Container(
+            width: 380,
+            height: 380,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [topGlow, topGlow.withOpacity(0.0)],
+                radius: 0.7,
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: -100,
+          left: -80,
+          child: Container(
+            width: 360,
+            height: 360,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [bottomGlow, bottomGlow.withOpacity(0.0)],
+                radius: 0.7,
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 300,
+          left: -60,
+          child: Container(
+            width: 280,
+            height: 280,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [accentGlow, accentGlow.withOpacity(0.0)],
+                radius: 0.7,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NightAmbientMesh extends StatelessWidget {
+  const _NightAmbientMesh();
+
+  @override
+  Widget build(BuildContext context) {
+    const baseColor = Color(0xFF0A1211);
+    final topGlow = const Color(0xFF0F766E).withOpacity(0.38);
+    final bottomGlow = const Color(0xFF064E3B).withOpacity(0.32);
+    final accentGlow = const Color(0xFF0E7490).withOpacity(0.28);
+
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Container(color: baseColor),
+        ),
+        Positioned(
+          top: -120,
+          right: -80,
+          child: Container(
+            width: 410,
+            height: 410,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [topGlow, topGlow.withOpacity(0.0)],
+                radius: 0.7,
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: -100,
+          left: -80,
+          child: Container(
+            width: 390,
+            height: 390,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [bottomGlow, bottomGlow.withOpacity(0.0)],
+                radius: 0.7,
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 300,
+          left: -60,
+          child: Container(
+            width: 300,
+            height: 300,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [accentGlow, accentGlow.withOpacity(0.0)],
+                radius: 0.7,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
