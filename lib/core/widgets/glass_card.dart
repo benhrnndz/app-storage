@@ -34,16 +34,18 @@ class GlassContainer extends StatelessWidget {
     // Translucent glass fill with specular clarity
     final glassColor = color ??
         (isDark
-            ? const Color(0xFF131826).withOpacity(0.62)
+            ? const Color(0xFF111E1D).withOpacity(0.70)
             : Colors.white.withOpacity(0.78));
 
     // Delicate glass refraction border
     final glassBorder = borderColor ??
         (isDark
-            ? Colors.white.withOpacity(0.15)
+            ? Colors.white.withOpacity(0.14)
             : Colors.white.withOpacity(0.85));
 
-    Widget content = Container(
+    Widget content = AnimatedContainer(
+      duration: const Duration(milliseconds: 550),
+      curve: Curves.easeInOutCubic,
       padding: padding,
       decoration: BoxDecoration(
         color: glassColor,
@@ -59,7 +61,8 @@ class GlassContainer extends StatelessWidget {
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: (isDark ? Colors.blueAccent : Colors.indigoAccent).withOpacity(isDark ? 0.05 : 0.02),
+            color: (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E))
+                .withOpacity(isDark ? 0.08 : 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
