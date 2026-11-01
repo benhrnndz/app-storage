@@ -2,6 +2,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_service.dart';
 import 'data/repositories/lms_repository.dart';
 import 'features/ai_assistant/services/ai_preferences_service.dart';
 import 'features/auth/services/auth_service.dart';
@@ -13,6 +14,7 @@ void main() async {
   // Ensure Flutter engine bindings are initialized before calling platform channels
   WidgetsFlutterBinding.ensureInitialized();
   await AiPreferencesService.init();
+  await ThemeService.init();
 
   AuthService authService;
   LmsRepository repository;
@@ -50,14 +52,21 @@ class StudentLmsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Syllo',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: AuthGate(
-        authService: authService,
-        repository: repository,
-      ),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeService.themeModeNotifier,
+      builder: (context, currentThemeMode, _) {
+        return MaterialApp(
+          title: 'Syllo',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: currentThemeMode,
+          home: AuthGate(
+            authService: authService,
+            repository: repository,
+          ),
+        );
+      },
     );
   }
 }
