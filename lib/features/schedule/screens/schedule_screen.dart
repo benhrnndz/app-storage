@@ -1,6 +1,7 @@
 // lib/features/schedule/screens/schedule_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../core/theme/theme_service.dart';
 import '../../../core/widgets/ambient_background.dart';
 import '../../../core/widgets/bouncy_tap.dart';
 import '../../../core/widgets/frosted_app_bar.dart';
@@ -292,6 +293,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   const Color(0xFF10B981).withOpacity(0.07),
                 ],
                 actions: [
+                  IconButton(
+                    icon: Icon(
+                      Theme.of(context).brightness == Brightness.dark
+                          ? Icons.light_mode_rounded
+                          : Icons.dark_mode_rounded,
+                      size: 21,
+                    ),
+                    tooltip: Theme.of(context).brightness == Brightness.dark
+                        ? 'Switch to Day Mode'
+                        : 'Switch to Night Version',
+                    onPressed: () => ThemeService.toggleTheme(),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.tune_outlined, size: 22),
                     tooltip: 'Schedule & Sync Settings',
