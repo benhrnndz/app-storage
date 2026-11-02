@@ -485,13 +485,82 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                     ),
                   const SizedBox(width: 8),
                 ],
-                bottom: TabBar(
-                  controller: _tabController,
-                  indicatorColor: Theme.of(context).colorScheme.primary,
-                  tabs: const [
-                    Tab(icon: Icon(Icons.school), text: 'Active Courses'),
-                    Tab(icon: Icon(Icons.history_edu), text: 'Past Courses'),
-                  ],
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(52),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: (Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black).withOpacity(0.08),
+                          width: 1.0,
+                        ),
+                      ),
+                      child: TabBar(
+                        controller: _tabController,
+                        indicator: BoxDecoration(
+                          color: (Theme.of(context).brightness == Brightness.dark
+                                  ? const Color(0xFF2DD4BF)
+                                  : Theme.of(context).colorScheme.primary)
+                              .withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(13),
+                          border: Border.all(
+                            color: (Theme.of(context).brightness == Brightness.dark
+                                    ? const Color(0xFF2DD4BF)
+                                    : Theme.of(context).colorScheme.primary)
+                                .withOpacity(0.35),
+                            width: 1.0,
+                          ),
+                        ),
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        dividerColor: Colors.transparent,
+                        labelColor: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF2DD4BF)
+                            : Theme.of(context).colorScheme.primary,
+                        unselectedLabelColor: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade600,
+                        labelStyle: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12.5,
+                          letterSpacing: -0.2,
+                        ),
+                        unselectedLabelStyle: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12.5,
+                        ),
+                        tabs: const [
+                          Tab(
+                            height: 38,
+                            iconMargin: EdgeInsets.zero,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.school_rounded, size: 17),
+                                SizedBox(width: 8),
+                                Text('Active Courses'),
+                              ],
+                            ),
+                          ),
+                          Tab(
+                            height: 38,
+                            iconMargin: EdgeInsets.zero,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.history_edu_rounded, size: 17),
+                                SizedBox(width: 8),
+                                Text('Past Courses'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
               body: AmbientMeshBackground(
