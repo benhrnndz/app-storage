@@ -235,7 +235,7 @@ class _LandingScreenState extends State<LandingScreen> {
           const Spacer(),
 
           // Desktop Navigation Links
-          if (MediaQuery.of(context).size.width >= 880) ...[
+          if (MediaQuery.of(context).size.width >= 680) ...[
             _buildNavLink('Capabilities', () => _scrollTo(_featuresKey), theme, isDark),
             const SizedBox(width: 6),
             _buildNavLink('Architecture', () => _scrollTo(_architectureKey), theme, isDark),
@@ -244,51 +244,6 @@ class _LandingScreenState extends State<LandingScreen> {
 
           // Theme Toggle (Night / Day Switcher)
           const ThemeToggleButton(showBackground: false),
-
-          const SizedBox(width: 10),
-
-          // Sign In CTA
-          BouncyTap(
-            onTap: _openDedicatedLoginScreen,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7.5),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    primaryAccent,
-                    const Color(0xFF10B981),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryAccent.withOpacity(0.28),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Sign In',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 13,
-                    color: Colors.white,
-                  ),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -354,13 +309,18 @@ class _LandingScreenState extends State<LandingScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                'STUDENT-FIRST ACADEMIC PORTFOLIO & SCHEDULE MANAGER',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.6,
-                  color: primaryAccent,
+              Flexible(
+                child: Text(
+                  isMobile
+                      ? 'ACADEMIC PORTFOLIO & SCHEDULE'
+                      : 'STUDENT-FIRST ACADEMIC PORTFOLIO & SCHEDULE MANAGER',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
+                    color: primaryAccent,
+                  ),
                 ),
               ),
             ],
@@ -579,96 +539,135 @@ class _LandingScreenState extends State<LandingScreen> {
   // ===========================================================================
   Widget _buildShowcaseSection(ThemeData theme, bool isDark) {
     final primaryAccent = isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E);
+    final isWide = MediaQuery.of(context).size.width >= 720;
 
     return RepaintBoundary(
-      child: GlassContainer(
-        borderRadius: 28,
-        blur: 24,
-        padding: const EdgeInsets.all(12),
-        borderColor: primaryAccent.withOpacity(isDark ? 0.25 : 0.16),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Artwork Image
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Image.asset(
-                  'assets/images/syllo_hero.jpg',
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: const Color(0xFF0A1211),
-                    child: const Center(
-                      child: Icon(
-                        Icons.laptop_chromebook_rounded,
-                        size: 64,
-                        color: Colors.teal,
+      child: Column(
+        children: [
+          GlassContainer(
+            borderRadius: 28,
+            blur: 24,
+            padding: const EdgeInsets.all(12),
+            borderColor: primaryAccent.withOpacity(isDark ? 0.25 : 0.16),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Artwork Image
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Image.asset(
+                      'assets/images/syllo_hero.jpg',
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: const Color(0xFF0A1211),
+                        child: const Center(
+                          child: Icon(
+                            Icons.laptop_chromebook_rounded,
+                            size: 64,
+                            color: Colors.teal,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
 
-            // Subtle Glass Vignette Overlay
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(isDark ? 0.35 : 0.15),
-                      ],
+                // Subtle Glass Vignette Overlay
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(isDark ? 0.35 : 0.15),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
 
-            // Floating Floating Feature Badges
-            Positioned(
-              top: 16,
-              left: 16,
-              child: _buildShowcaseChip(
-                icon: Icons.calendar_today_rounded,
-                label: 'Dynamic Timetable Sync',
-                isDark: isDark,
-              ),
+                // Floating Feature Badges for wide screens
+                if (isWide) ...[
+                  Positioned(
+                    top: 16,
+                    left: 16,
+                    child: _buildShowcaseChip(
+                      icon: Icons.calendar_today_rounded,
+                      label: 'Dynamic Timetable Sync',
+                      isDark: isDark,
+                    ),
+                  ),
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: _buildShowcaseChip(
+                      icon: Icons.auto_awesome_rounded,
+                      label: 'AI Study Intelligence',
+                      isDark: isDark,
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 16,
+                    left: 16,
+                    child: _buildShowcaseChip(
+                      icon: Icons.analytics_outlined,
+                      label: 'Weighted Deliverables & GPA',
+                      isDark: isDark,
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 16,
+                    right: 16,
+                    child: _buildShowcaseChip(
+                      icon: Icons.cloud_done_rounded,
+                      label: 'Real-Time Firestore Cache',
+                      isDark: isDark,
+                    ),
+                  ),
+                ],
+              ],
             ),
-            Positioned(
-              top: 16,
-              right: 16,
-              child: _buildShowcaseChip(
-                icon: Icons.auto_awesome_rounded,
-                label: 'AI Study Intelligence',
-                isDark: isDark,
-              ),
-            ),
-            Positioned(
-              bottom: 16,
-              left: 16,
-              child: _buildShowcaseChip(
-                icon: Icons.analytics_outlined,
-                label: 'Weighted Deliverables & GPA',
-                isDark: isDark,
-              ),
-            ),
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: _buildShowcaseChip(
-                icon: Icons.cloud_done_rounded,
-                label: 'Real-Time Firestore Cache',
-                isDark: isDark,
-              ),
+          ),
+
+          // Wrap Feature Badges below image for compact/mobile viewports
+          if (!isWide) ...[
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: [
+                _buildShowcaseChip(
+                  icon: Icons.calendar_today_rounded,
+                  label: 'Timetable Sync',
+                  isDark: isDark,
+                ),
+                _buildShowcaseChip(
+                  icon: Icons.auto_awesome_rounded,
+                  label: 'AI Study Intelligence',
+                  isDark: isDark,
+                ),
+                _buildShowcaseChip(
+                  icon: Icons.analytics_outlined,
+                  label: 'Deliverables & GPA',
+                  isDark: isDark,
+                ),
+                _buildShowcaseChip(
+                  icon: Icons.cloud_done_rounded,
+                  label: 'Real-Time Firestore',
+                  isDark: isDark,
+                ),
+              ],
             ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -1166,8 +1165,11 @@ class _LandingScreenState extends State<LandingScreen> {
           color: (isDark ? Colors.white : Colors.black).withOpacity(0.08),
         ),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 16,
+          runSpacing: 12,
           children: [
             Text(
               '© 2026 Syllo • System Integration & Architecture',
