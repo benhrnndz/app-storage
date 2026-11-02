@@ -344,26 +344,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         children: [
                           // View Switcher: "Calendar Agenda" vs "Timetable Settings"
                           Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: SegmentedButton<int>(
-                        segments: const [
-                          ButtonSegment(
-                            value: 0,
-                            label: Text('Calendar Agenda'),
-                            icon: Icon(Icons.calendar_month),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: _buildViewSwitcher(
+                              Theme.of(context).brightness == Brightness.dark,
+                              Theme.of(context).colorScheme.primary,
+                            ),
                           ),
-                          ButtonSegment(
-                            value: 1,
-                            label: Text('Timetable Settings'),
-                            icon: Icon(Icons.tune),
-                          ),
-                        ],
-                        selected: {_viewMode},
-                        onSelectionChanged: (newSelection) {
-                          setState(() => _viewMode = newSelection.first);
-                        },
-                      ),
-                    ),
 
                     const Divider(height: 1),
 
@@ -380,6 +366,109 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           },
         );
       },
+    );
+  }
+
+  // ==========================================
+  // VIEW SWITCHER (EMIL KOWALSKI SEGMENTED PILL)
+  // ==========================================
+  Widget _buildViewSwitcher(bool isDark, Color primaryColor) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: (isDark ? Colors.white : Colors.black).withOpacity(0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: (isDark ? Colors.white : Colors.black).withOpacity(0.08),
+          width: 1.0,
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildSwitcherItem(
+              index: 0,
+              icon: Icons.calendar_month_rounded,
+              label: 'Calendar Agenda',
+              isDark: isDark,
+              primaryColor: primaryColor,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: _buildSwitcherItem(
+              index: 1,
+              icon: Icons.tune_rounded,
+              label: 'Timetable Settings',
+              isDark: isDark,
+              primaryColor: primaryColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSwitcherItem({
+    required int index,
+    required IconData icon,
+    required String label,
+    required bool isDark,
+    required Color primaryColor,
+  }) {
+    final isSelected = _viewMode == index;
+    final activeColor = isDark ? const Color(0xFF2DD4BF) : primaryColor;
+    final unselectedColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+
+    return BouncyTap(
+      onTap: () => setState(() => _viewMode = index),
+      scaleDown: 0.96,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? activeColor.withOpacity(0.18)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(13),
+          border: isSelected
+              ? Border.all(
+                  color: activeColor.withOpacity(0.35),
+                  width: 1.0,
+                )
+              : Border.all(color: Colors.transparent, width: 1.0),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: activeColor.withOpacity(0.12),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? activeColor : unselectedColor,
+            ),
+            const SizedBox(width: 7),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? activeColor : unselectedColor,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -413,20 +502,41 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         // Information banner
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.blue.shade100),
+            color: (Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF2DD4BF)
+                    : Theme.of(context).colorScheme.primary)
+                .withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.12 : 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: (Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF2DD4BF)
+                      : Theme.of(context).colorScheme.primary)
+                  .withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.30 : 0.20),
+              width: 1.0,
+            ),
           ),
           child: Row(
             children: [
-              Icon(Icons.info_outline, size: 18, color: Colors.blue.shade800),
-              const SizedBox(width: 8),
+              Icon(
+                Icons.info_outline_rounded,
+                size: 16,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF2DD4BF)
+                    : Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Only classes for active courses with sync enabled are displayed here.',
-                  style: TextStyle(fontSize: 12, color: Colors.blue.shade900),
+                  'Only classes for active courses with calendar sync enabled are displayed here.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey.shade300
+                        : const Color(0xFF0F766E),
+                  ),
                 ),
               ),
             ],
@@ -537,12 +647,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final monday = now.subtract(Duration(days: now.weekday - 1));
     final weekDays = List.generate(7, (i) => monday.add(Duration(days: i)));
     final dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = isDark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary;
 
     return GlassContainer(
-      borderRadius: 20,
+      borderRadius: 22,
       blur: 16,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: weekDays.map((date) {
@@ -552,33 +665,77 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
           final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
 
-          return InkWell(
-            borderRadius: BorderRadius.circular(16),
+          return BouncyTap(
+            scaleDown: 0.94,
             onTap: () => setState(() => _selectedDate = date),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(16),
-                border: isToday && !isSelected
-                    ? Border.all(color: Theme.of(context).colorScheme.primary, width: 1.5)
+                gradient: isSelected
+                    ? LinearGradient(
+                        colors: [
+                          primaryColor,
+                          const Color(0xFF10B981),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
                     : null,
+                color: isSelected ? null : Colors.transparent,
+                borderRadius: BorderRadius.circular(15),
+                border: isToday && !isSelected
+                    ? Border.all(color: primaryColor.withOpacity(0.5), width: 1.2)
+                    : isSelected
+                        ? Border.all(color: Colors.white.withOpacity(0.35), width: 1.0)
+                        : Border.all(color: Colors.transparent, width: 1.0),
                 boxShadow: isSelected
-                    ? [BoxShadow(color: Theme.of(context).colorScheme.primary.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))]
+                    ? [
+                        BoxShadow(
+                          color: primaryColor.withOpacity(isDark ? 0.35 : 0.25),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
                     : null,
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     dayLabels[date.weekday - 1],
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isSelected ? Colors.white : Colors.grey.shade600),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${date.day}',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.black87),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? Colors.white : Colors.black87),
+                    ),
                   ),
+                  const SizedBox(height: 3),
+                  if (isToday)
+                    Container(
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSelected ? Colors.white : primaryColor,
+                      ),
+                    )
+                  else
+                    const SizedBox(height: 4),
                 ],
               ),
             ),
