@@ -233,20 +233,46 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           child: Row(
                             children: _quickPrompts.map((prompt) {
+                              final isDark = theme.brightness == Brightness.dark;
+                              final accentColor = isDark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary;
+
                               return Padding(
                                 padding: const EdgeInsets.only(right: 8),
                                 child: BouncyTap(
+                                  scaleDown: 0.95,
                                   onTap: () => _handleSubmitted(prompt, courses, deliverables, schedules),
-                                  child: ActionChip(
-                                    avatar: const Icon(Icons.bolt, size: 14, color: Colors.blueAccent),
-                                    label: Text(
-                                      prompt,
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                    decoration: BoxDecoration(
+                                      color: (isDark ? const Color(0xFF111E1D) : Colors.white).withOpacity(0.82),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: accentColor.withOpacity(isDark ? 0.35 : 0.22),
+                                        width: 1.0,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
                                     ),
-                                    backgroundColor: Colors.white.withOpacity(0.85),
-                                    side: BorderSide(color: Colors.blueAccent.withOpacity(0.25)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    onPressed: () => _handleSubmitted(prompt, courses, deliverables, schedules),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.auto_awesome_rounded, size: 13, color: accentColor),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          prompt,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: isDark ? Colors.grey.shade200 : Colors.grey.shade800,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );
@@ -291,6 +317,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
 
   Widget _buildMessageBubble(AiMessage message, ThemeData theme) {
     final isUser = message.isUser;
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = isDark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary;
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -303,11 +331,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           borderRadius: 20,
           blur: 16,
           borderColor: isUser
-              ? Colors.blueAccent.withOpacity(0.4)
-              : Colors.white.withOpacity(0.7),
+              ? primaryColor.withOpacity(isDark ? 0.40 : 0.28)
+              : (isDark ? Colors.white.withOpacity(0.14) : Colors.white.withOpacity(0.85)),
           color: isUser
-              ? Colors.blueAccent.withOpacity(0.12)
-              : Colors.white.withOpacity(0.85),
+              ? primaryColor.withOpacity(isDark ? 0.22 : 0.12)
+              : (isDark ? const Color(0xFF111E1D).withOpacity(0.75) : Colors.white.withOpacity(0.85)),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,31 +347,31 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.blueAccent.withOpacity(0.12),
+                        color: primaryColor.withOpacity(isDark ? 0.20 : 0.12),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.auto_awesome, color: Colors.blueAccent, size: 14),
+                      child: Icon(Icons.auto_awesome_rounded, color: primaryColor, size: 13),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 7),
                     Text(
-                      'Academic Coach',
+                      'Syllo AI Coach',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blueAccent.shade700,
-                        letterSpacing: 0.5,
+                        color: primaryColor,
+                        letterSpacing: 0.4,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
               ],
               Text(
                 message.text,
                 style: TextStyle(
                   fontSize: 13.5,
-                  height: 1.4,
-                  color: isUser ? Colors.black87 : Colors.grey.shade900,
+                  height: 1.45,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
                 ),
               ),
             ],
@@ -388,42 +416,71 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     List<Deliverable> deliverables,
     List<ScheduleSlot> schedules,
   ) {
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = isDark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary;
+
     return Container(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 94),
-      child: GlassContainer(
-        borderRadius: 26,
-        blur: 20,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          children: [
-            const SizedBox(width: 8),
-            const Icon(Icons.auto_awesome_outlined, size: 20, color: Colors.blueAccent),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _textController,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (val) => _handleSubmitted(val, courses, deliverables, schedules),
-                decoration: const InputDecoration(
-                  hintText: 'Ask your academic assistant...',
-                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 720),
+          child: GlassContainer(
+            borderRadius: 26,
+            blur: 20,
+            borderColor: isDark ? primaryColor.withOpacity(0.28) : primaryColor.withOpacity(0.20),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              children: [
+                const SizedBox(width: 8),
+                Icon(Icons.auto_awesome_rounded, size: 19, color: primaryColor),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _textController,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (val) => _handleSubmitted(val, courses, deliverables, schedules),
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Ask your academic assistant...',
+                      hintStyle: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            BouncyTap(
-              onTap: () => _handleSubmitted(_textController.text, courses, deliverables, schedules),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  shape: BoxShape.circle,
+                BouncyTap(
+                  onTap: () => _handleSubmitted(_textController.text, courses, deliverables, schedules),
+                  scaleDown: 0.92,
+                  child: Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          primaryColor,
+                          const Color(0xFF10B981),
+                        ],
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: primaryColor.withOpacity(0.35),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 17),
+                  ),
                 ),
-                child: const Icon(Icons.arrow_upward, color: Colors.white, size: 18),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
