@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/repositories/lms_repository.dart';
 import '../../../models/auth_user.dart';
+import '../../landing/screens/landing_screen.dart';
 import '../../navigation/main_navigation_screen.dart';
 import '../screens/login_screen.dart';
 import '../services/auth_service.dart';
@@ -45,8 +46,8 @@ class AuthGate extends StatelessWidget {
           );
         }
 
-        // If unauthenticated -> present the Google Sign-In onboarding screen
-        return LoginScreen(authService: authService);
+        // If unauthenticated -> present the cinematic landing screen
+        return LandingScreen(authService: authService);
       },
     );
   }

@@ -96,6 +96,45 @@ class _LoginScreenState extends State<LoginScreen> {
                 },
               ),
 
+              // Top-Left Back / Overview Button if canPop
+              if (Navigator.of(context).canPop())
+                Positioned(
+                  top: 14,
+                  left: 18,
+                  child: BouncyTap(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: (isDark ? Colors.white : Colors.black).withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: (isDark ? Colors.white : Colors.black).withOpacity(0.12),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.arrow_back_rounded,
+                            size: 15,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Overview',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
               // Top-Right Quick Theme Toggle (Sun / Moon) on top of the z-stack
               const Positioned(
                 top: 14,
