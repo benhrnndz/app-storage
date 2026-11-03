@@ -478,6 +478,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   Widget _buildCalendarAgendaView(List<ScheduleSlot> slots, List<Course> courses) {
     _checkUpcomingReminders(slots, courses);
     final selectedDayOfWeek = _selectedDate.weekday;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Filter slots for the selected day:
     // 1. Must belong to an active (non-archived) course
@@ -504,16 +505,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: (Theme.of(context).brightness == Brightness.dark
+            color: (isDark
                     ? const Color(0xFF2DD4BF)
                     : Theme.of(context).colorScheme.primary)
-                .withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.12 : 0.08),
+                .withOpacity(isDark ? 0.12 : 0.08),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: (Theme.of(context).brightness == Brightness.dark
+              color: (isDark
                       ? const Color(0xFF2DD4BF)
                       : Theme.of(context).colorScheme.primary)
-                  .withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.30 : 0.20),
+                  .withOpacity(isDark ? 0.30 : 0.20),
               width: 1.0,
             ),
           ),
@@ -522,7 +523,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               Icon(
                 Icons.info_outline_rounded,
                 size: 16,
-                color: Theme.of(context).brightness == Brightness.dark
+                color: isDark
                     ? const Color(0xFF2DD4BF)
                     : Theme.of(context).colorScheme.primary,
               ),
@@ -533,7 +534,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Theme.of(context).brightness == Brightness.dark
+                    color: isDark
                         ? Colors.grey.shade300
                         : const Color(0xFF0F766E),
                   ),
@@ -554,17 +555,24 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.event_busy, size: 48, color: Colors.grey.shade400),
+                        Icon(Icons.event_busy, size: 48, color: isDark ? Colors.grey.shade600 : Colors.grey.shade400),
                         const SizedBox(height: 10),
                         Text(
                           'No scheduled classes for this day.',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.grey.shade700,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Either you have no class, the course is archived,\nor sync is disabled under "Timetable Settings".',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12.5, color: Colors.grey.shade500),
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                          ),
                         ),
                       ],
                     ),
@@ -594,8 +602,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(slot.startTime, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                  Text(slot.endTime, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                  Text(
+                                    slot.startTime,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
+                                  Text(
+                                    slot.endTime,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                    ),
+                                  ),
                                 ],
                               ),
                               const SizedBox(width: 16),
@@ -610,7 +631,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(course.code, style: TextStyle(fontWeight: FontWeight.bold, color: courseColor, fontSize: 14)),
-                                    Text(course.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                    Text(
+                                      course.title,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                        color: isDark ? Colors.white : Colors.black87,
+                                      ),
+                                    ),
                                     const SizedBox(height: 6),
                                     Row(
                                       children: [
@@ -619,11 +647,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                               ? Icons.videocam_outlined
                                               : Icons.location_on_outlined,
                                           size: 14,
-                                          color: Colors.grey.shade600,
+                                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                                         ),
                                         const SizedBox(width: 4),
                                         Expanded(
-                                          child: Text(slot.roomOrLink, style: TextStyle(fontSize: 12, color: Colors.grey.shade700), overflow: TextOverflow.ellipsis),
+                                          child: Text(
+                                            slot.roomOrLink,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -753,6 +788,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final validSlots = slots.where((slot) => _getCourseForSlot(courses, slot) != null).toList();
     final activeSlots = validSlots.where((s) => !_getCourseForSlot(courses, s)!.isArchived).toList();
     final archivedSlots = validSlots.where((s) => _getCourseForSlot(courses, s)!.isArchived).toList();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ListView(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
@@ -764,11 +800,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.calendar_today, size: 52, color: Colors.grey.shade400),
+                  Icon(Icons.calendar_today, size: 52, color: isDark ? Colors.grey.shade500 : Colors.grey.shade400),
                   const SizedBox(height: 10),
-                  const Text('No class sessions created yet.', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+                  Text(
+                    'No class sessions created yet.',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.grey.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  const Text('Tap "+" at the top to add recurring class hours.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text(
+                    'Tap "+" at the top to add recurring class hours.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.grey.shade400 : Colors.grey,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -783,23 +831,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey.shade600,
-                letterSpacing: 1.1,
-              ),
-            ),
-          ),
-          ...activeSlots.map((slot) => _buildTimetableSlotTile(slot, courses, isArchived: false)),
-        ],
-
-        if (archivedSlots.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8, left: 4),
-            child: Text(
-              'ACTIVE TIMETABLE (${activeSlots.length})',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade600,
+                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                 letterSpacing: 1.1,
               ),
             ),
@@ -813,14 +845,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             padding: const EdgeInsets.only(bottom: 8, left: 4),
             child: Row(
               children: [
-                Icon(Icons.archive_outlined, size: 16, color: Colors.orange.shade800),
+                Icon(Icons.archive_outlined, size: 16, color: isDark ? Colors.orange.shade300 : Colors.orange.shade800),
                 const SizedBox(width: 6),
                 Text(
                   'ARCHIVED COURSE SCHEDULES (${archivedSlots.length})',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Colors.orange.shade800,
+                    color: isDark ? Colors.orange.shade300 : Colors.orange.shade800,
                     letterSpacing: 1.1,
                   ),
                 ),
@@ -831,18 +863,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.orange.shade50,
+              color: isDark ? Colors.orange.shade900.withOpacity(0.25) : Colors.orange.shade50,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.orange.shade200),
+              border: Border.all(
+                color: isDark ? Colors.orange.shade400.withOpacity(0.3) : Colors.orange.shade200,
+              ),
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, size: 18, color: Colors.orange.shade800),
+                Icon(Icons.info_outline, size: 18, color: isDark ? Colors.orange.shade300 : Colors.orange.shade800),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Classes below belong to archived courses. Their calendar sync is suspended and will not appear on your calendar.',
-                    style: TextStyle(fontSize: 12, color: Colors.orange.shade900),
+                    style: TextStyle(fontSize: 12, color: isDark ? Colors.orange.shade200 : Colors.orange.shade900),
                   ),
                 ),
               ],
@@ -858,6 +892,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final course = _getCourseForSlot(courses, slot);
     if (course == null) return const SizedBox.shrink();
     final courseColor = Color(course.colorValue);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onLongPress: () => _showSlotOptions(slot, courses),
@@ -884,7 +919,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       child: Text(
                         slot.dayName.toUpperCase(),
                         style: TextStyle(
-                          color: isArchived ? Colors.orange.shade800 : courseColor,
+                          color: isArchived ? (isDark ? Colors.orange.shade300 : Colors.orange.shade800) : courseColor,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -895,7 +930,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.orange.shade100,
+                          color: isDark ? Colors.orange.shade900.withOpacity(0.3) : Colors.orange.shade100,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -903,7 +938,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: Colors.orange.shade900,
+                            color: isDark ? Colors.orange.shade300 : Colors.orange.shade900,
                           ),
                         ),
                       ),
@@ -915,7 +950,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
-                    color: isArchived ? Colors.grey.shade600 : Colors.black87,
+                    color: isArchived
+                        ? (isDark ? Colors.grey.shade400 : Colors.grey.shade600)
+                        : (isDark ? Colors.white70 : Colors.black87),
                   ),
                 ),
               ],
@@ -926,15 +963,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 15,
-                color: isArchived ? Colors.grey.shade700 : Colors.black87,
+                color: isArchived
+                    ? (isDark ? Colors.grey.shade400 : Colors.grey.shade700)
+                    : (isDark ? Colors.white : Colors.black87),
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'Location: ${slot.roomOrLink}',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              style: TextStyle(
+                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                fontSize: 13,
+              ),
             ),
-            const Divider(height: 20),
+            Divider(height: 20, color: isDark ? Colors.white12 : null),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -949,7 +991,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
-                          color: isArchived ? Colors.orange.shade800 : Colors.black87,
+                          color: isArchived
+                              ? (isDark ? Colors.orange.shade300 : Colors.orange.shade800)
+                              : (isDark ? Colors.white : Colors.black87),
                         ),
                       ),
                       Text(
@@ -961,10 +1005,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         style: TextStyle(
                           fontSize: 11,
                           color: isArchived
-                              ? Colors.grey.shade600
+                              ? (isDark ? Colors.grey.shade400 : Colors.grey.shade600)
                               : (slot.isCalendarSyncEnabled
-                                  ? Colors.green.shade700
-                                  : Colors.grey.shade600),
+                                  ? (isDark ? const Color(0xFF34D399) : Colors.green.shade700)
+                                  : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
                         ),
                       ),
                     ],
@@ -973,7 +1017,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 if (!isArchived)
                   Switch(
                     value: slot.isCalendarSyncEnabled,
-                    activeColor: Colors.blueAccent,
+                    activeColor: isDark ? const Color(0xFF2DD4BF) : Colors.blueAccent,
                     onChanged: (_) => _toggleCalendarSync(slot, courses),
                   )
                 else
