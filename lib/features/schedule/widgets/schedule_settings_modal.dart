@@ -198,7 +198,13 @@ class _ScheduleSettingsModalState extends State<ScheduleSettingsModal> {
                             : 'Disabled: No alerts for classes',
                         style: TextStyle(
                           fontSize: 12,
-                          color: _remindersEnabled ? Colors.blueAccent.shade700 : Colors.grey.shade600,
+                          color: _remindersEnabled
+                              ? (Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.blueAccent.shade100
+                                  : Colors.blueAccent.shade700)
+                              : (Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.grey.shade400
+                                  : Colors.grey.shade600),
                         ),
                       ),
                     ],
