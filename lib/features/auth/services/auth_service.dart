@@ -24,6 +24,7 @@ abstract class AuthService {
 class MockAuthService implements AuthService {
   final _controller = StreamController<AuthUser?>.broadcast();
   AuthUser? _currentUser;
+  late final Stream<AuthUser?> _stream;
 
   MockAuthService({bool startLoggedIn = false}) {
     if (startLoggedIn) {
@@ -34,13 +35,19 @@ class MockAuthService implements AuthService {
         photoUrl: null,
       );
     }
+    _stream = Stream<AuthUser?>.multi((multiController) {
+      multiController.add(_currentUser);
+      final sub = _controller.stream.listen(
+        multiController.add,
+        onError: multiController.addError,
+        onDone: multiController.close,
+      );
+      multiController.onCancel = () => sub.cancel();
+    });
   }
 
   @override
-  Stream<AuthUser?> get authStateChanges async* {
-    yield _currentUser;
-    yield* _controller.stream;
-  }
+  Stream<AuthUser?> get authStateChanges => _stream;
 
   @override
   AuthUser? get currentUser => _currentUser;
