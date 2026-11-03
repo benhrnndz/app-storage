@@ -162,6 +162,74 @@ void main() {
       // Verify we STILL remain on Schedule Screen!
       expect(find.text('Class Schedule & Calendar'), findsOneWidget);
     });
+
+    testWidgets('In Night Mode, timetable texts are light-colored and visible (not black)', (WidgetTester tester) async {
+      final authService = MockAuthService(startLoggedIn: true);
+      final repository = LocalLmsRepository();
+
+      await tester.pumpWidget(StudentLmsApp(
+        authService: authService,
+        repository: repository,
+      ));
+      await tester.pumpAndSettle();
+
+      // Switch to Night Mode
+      await ThemeService.setThemeMode(ThemeMode.dark);
+      await tester.pumpAndSettle();
+      expect(ThemeService.isDarkMode, true);
+
+      // Navigate to Schedule / Calendar tab
+      await tester.tap(find.text('Schedule'));
+      await tester.pumpAndSettle();
+
+      // Switch to Timetable Settings
+      await tester.tap(find.text('Timetable Settings'));
+      await tester.pumpAndSettle();
+
+      // Find timetable slot titles (e.g., SIA101: Systems Integration and Architecture)
+      final timetableTitleFinder = find.textContaining('SIA101:');
+      expect(timetableTitleFinder, findsWidgets);
+
+      final Text titleWidget = tester.widget<Text>(timetableTitleFinder.first);
+      expect(titleWidget.style?.color, isNot(Colors.black87));
+      expect(titleWidget.style?.color, Colors.white);
+
+      // Find calendar sync toggle text
+      final syncTextFinder = find.text('Schedule into dedicated calendar');
+      expect(syncTextFinder, findsWidgets);
+      final Text syncWidget = tester.widget<Text>(syncTextFinder.first);
+      expect(syncWidget.style?.color, isNot(Colors.black87));
+      expect(syncWidget.style?.color, Colors.white);
+    });
+
+    testWidgets('In Night Mode, texts inside course details are light-colored and visible', (WidgetTester tester) async {
+      final authService = MockAuthService(startLoggedIn: true);
+      final repository = LocalLmsRepository();
+
+      await tester.pumpWidget(StudentLmsApp(
+        authService: authService,
+        repository: repository,
+      ));
+      await tester.pumpAndSettle();
+
+      // Switch to Night Mode
+      await ThemeService.setThemeMode(ThemeMode.dark);
+      await tester.pumpAndSettle();
+
+      // Open a course card to enter course details
+      await tester.tap(find.text('Systems Integration and Architecture').first);
+      await tester.pumpAndSettle();
+
+      // Verify we are inside CourseDetailsScreen
+      expect(find.text('SIA101'), findsOneWidget);
+
+      // Course title inside header
+      final courseTitleFinder = find.text('Systems Integration and Architecture');
+      expect(courseTitleFinder, findsWidgets);
+      final Text courseTitle = tester.widget<Text>(courseTitleFinder.first);
+      expect(courseTitle.style?.color, isNot(Colors.black87));
+      expect(courseTitle.style?.color, Colors.white);
+    });
   });
 }
 
