@@ -272,20 +272,23 @@ class _AddCourseModalState extends State<AddCourseModal> {
     required String hint,
     required IconData icon,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
       labelText: label,
+      labelStyle: TextStyle(color: isDark ? Colors.grey.shade300 : null),
       hintText: hint,
-      prefixIcon: Icon(icon, size: 20),
+      hintStyle: TextStyle(color: isDark ? Colors.grey.shade500 : null),
+      prefixIcon: Icon(icon, size: 20, color: isDark ? Colors.grey.shade400 : null),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.6),
+      fillColor: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.6),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.shade300),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.shade300),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
