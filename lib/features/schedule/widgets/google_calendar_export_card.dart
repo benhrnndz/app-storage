@@ -36,24 +36,38 @@ class GoogleCalendarExportCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Option 1: One-Click Google Calendar',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
+              ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Long-press any class card in your agenda or timetable and tap "Add to Google Calendar". It opens Google Calendar with the weekly recurring lecture schedule pre-filled.',
-              style: TextStyle(fontSize: 12.5, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 12.5,
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade300 : Colors.black87,
+              ),
             ),
             const SizedBox(height: 14),
-            const Text(
+            Text(
               'Option 2: Full Semester Export (.ics)',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
+              ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Tap "Export Timetable (.ics)" to download all active subjects into a single universal calendar file. Open or import this file into Google Calendar, Apple Calendar, or Outlook to load all classes at once.',
-              style: TextStyle(fontSize: 12.5, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 12.5,
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade300 : Colors.black87,
+              ),
             ),
           ],
         ),
@@ -114,7 +128,13 @@ class GoogleCalendarExportCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Export your $activeSlotsCount active class schedule sessions with weekly recurrence rules and 15-minute reminders into your preferred calendar.',
-            style: TextStyle(fontSize: 12.5, color: Colors.grey.shade700, height: 1.3),
+            style: TextStyle(
+              fontSize: 12.5,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey.shade300
+                  : Colors.grey.shade700,
+              height: 1.3,
+            ),
           ),
           const SizedBox(height: 14),
           Row(
