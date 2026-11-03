@@ -148,6 +148,20 @@ class AppTheme {
       brightness: Brightness.dark,
       scaffoldBackgroundColor: canvasDark,
       colorScheme: colorScheme,
+      textTheme: const TextTheme(
+        headlineLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        headlineMedium: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        headlineSmall: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        titleLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        titleMedium: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        titleSmall: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        bodyLarge: TextStyle(color: Colors.white),
+        bodyMedium: TextStyle(color: Colors.white),
+        bodySmall: TextStyle(color: Colors.white70),
+        labelLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        labelMedium: TextStyle(color: Colors.white70),
+        labelSmall: TextStyle(color: Colors.white60),
+      ),
       appBarTheme: const AppBarTheme(
         centerTitle: false,
         elevation: 0,
@@ -170,7 +184,10 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+        backgroundColor: const Color(0xFF162524),
+        selectedColor: primaryTealDark.withOpacity(0.24),
+        secondaryLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: primaryTealDark),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
@@ -208,7 +225,16 @@ class AppTheme {
           side: BorderSide(color: Colors.white.withOpacity(0.12), width: 1.0),
         ),
         elevation: 20,
-        backgroundColor: const Color(0xFF111E1D).withOpacity(0.94),
+        backgroundColor: const Color(0xFF111E1D).withOpacity(0.96),
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+        contentTextStyle: const TextStyle(
+          color: Colors.white70,
+          fontSize: 14,
+        ),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
