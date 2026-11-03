@@ -116,6 +116,7 @@ class _AddScheduleModalState extends State<AddScheduleModal> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isEditing = widget.slotToEdit != null;
 
     return Padding(
@@ -142,7 +143,7 @@ class _AddScheduleModalState extends State<AddScheduleModal> {
                     width: 36,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade400,
+                      color: isDark ? Colors.grey.shade600 : Colors.grey.shade400,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -157,6 +158,7 @@ class _AddScheduleModalState extends State<AddScheduleModal> {
                       isEditing ? 'Edit Schedule Slot' : 'Add Class Session',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                     ),
                     IconButton(
@@ -168,27 +170,36 @@ class _AddScheduleModalState extends State<AddScheduleModal> {
                 const SizedBox(height: 16),
 
                 // Course Dropdown
-                const Text(
+                Text(
                   'Select Course',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.6),
+                    color: (isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.6)),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.shade300),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       isExpanded: true,
+                      dropdownColor: isDark ? const Color(0xFF162524) : Colors.white,
+                      style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 14),
                       value: _selectedCourseId.isNotEmpty ? _selectedCourseId : null,
-                      hint: const Text('Select a course'),
+                      hint: Text(
+                        'Select a course',
+                        style: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                      ),
                       items: widget.availableCourses.map((c) {
                         return DropdownMenuItem(
                           value: c.id,
-                          child: Text('${c.code}: ${c.title}'),
+                          child: Text('${c.code}: ${c.title}', style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -200,26 +211,32 @@ class _AddScheduleModalState extends State<AddScheduleModal> {
                 const SizedBox(height: 16),
 
                 // Day of Week
-                const Text(
+                Text(
                   'Day of the Week',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.6),
+                    color: (isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.6)),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.shade300),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<int>(
                       isExpanded: true,
+                      dropdownColor: isDark ? const Color(0xFF162524) : Colors.white,
+                      style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 14),
                       value: _selectedDayOfWeek,
                       items: List.generate(7, (i) {
                         return DropdownMenuItem(
                           value: i + 1,
-                          child: Text(_days[i]),
+                          child: Text(_days[i], style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
                         );
                       }),
                       onChanged: (val) {
@@ -240,16 +257,26 @@ class _AddScheduleModalState extends State<AddScheduleModal> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.6),
+                            color: (isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.6)),
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.grey.shade300),
+                            border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.shade300),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Start Time', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              Text(
+                                'Start Time',
+                                style: TextStyle(fontSize: 11, color: isDark ? Colors.grey.shade400 : Colors.grey),
+                              ),
                               const SizedBox(height: 4),
-                              Text(_formatTime(_startTime), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              Text(
+                                _formatTime(_startTime),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -263,16 +290,26 @@ class _AddScheduleModalState extends State<AddScheduleModal> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.6),
+                            color: (isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.6)),
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.grey.shade300),
+                            border: Border.all(color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.shade300),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('End Time', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                              Text(
+                                'End Time',
+                                style: TextStyle(fontSize: 11, color: isDark ? Colors.grey.shade400 : Colors.grey),
+                              ),
                               const SizedBox(height: 4),
-                              Text(_formatTime(_endTime), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              Text(
+                                _formatTime(_endTime),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -285,14 +322,24 @@ class _AddScheduleModalState extends State<AddScheduleModal> {
                 // Room / Online Link
                 TextFormField(
                   controller: _roomController,
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                   decoration: InputDecoration(
                     labelText: 'Room or Meeting URL',
+                    labelStyle: TextStyle(color: isDark ? Colors.grey.shade300 : null),
                     hintText: 'e.g. Lab 304, MS Teams, Zoom',
-                    prefixIcon: const Icon(Icons.location_on_outlined),
+                    hintStyle: TextStyle(color: isDark ? Colors.grey.shade500 : null),
+                    prefixIcon: Icon(Icons.location_on_outlined, color: isDark ? Colors.grey.shade400 : null),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.6),
+                    fillColor: (isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.6)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.shade300),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -300,10 +347,23 @@ class _AddScheduleModalState extends State<AddScheduleModal> {
                 // The User-First Toggle: Schedule into dedicated calendar?
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Schedule into Dedicated Calendar', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                  subtitle: const Text('If enabled, class sessions automatically appear in your active daily calendar view.', style: TextStyle(fontSize: 12)),
+                  title: Text(
+                    'Schedule into Dedicated Calendar',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'If enabled, class sessions automatically appear in your active daily calendar view.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                    ),
+                  ),
                   value: _isCalendarSyncEnabled,
-                  activeColor: Colors.blueAccent,
+                  activeColor: isDark ? const Color(0xFF2DD4BF) : Colors.blueAccent,
                   onChanged: (val) => setState(() => _isCalendarSyncEnabled = val),
                 ),
                 const SizedBox(height: 24),
