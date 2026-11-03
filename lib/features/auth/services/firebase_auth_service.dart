@@ -10,12 +10,18 @@ import 'auth_service.dart';
 class FirebaseAuthService implements AuthService {
   final FirebaseAuth _firebaseAuth;
   final GoogleSignIn _googleSignIn;
+  late final Stream<AuthUser?> _authStateStream;
 
   FirebaseAuthService({
     FirebaseAuth? firebaseAuth,
     GoogleSignIn? googleSignIn,
   })  : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
-        _googleSignIn = googleSignIn ?? GoogleSignIn();
+        _googleSignIn = googleSignIn ?? GoogleSignIn() {
+    _authStateStream = _firebaseAuth
+        .authStateChanges()
+        .map(_mapFirebaseUser)
+        .asBroadcastStream();
+  }
 
   /// Converts a native Firebase User into our domain AuthUser entity.
   AuthUser? _mapFirebaseUser(User? user) {
@@ -29,9 +35,7 @@ class FirebaseAuthService implements AuthService {
   }
 
   @override
-  Stream<AuthUser?> get authStateChanges {
-    return _firebaseAuth.authStateChanges().map(_mapFirebaseUser);
-  }
+  Stream<AuthUser?> get authStateChanges => _authStateStream;
 
   @override
   AuthUser? get currentUser => _mapFirebaseUser(_firebaseAuth.currentUser);
