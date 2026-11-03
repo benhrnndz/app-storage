@@ -150,6 +150,7 @@ class DeliverableTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final typeColor = _getTypeColor(deliverable.type);
     final allLinks = deliverable.allLinks;
 
@@ -204,8 +205,11 @@ class DeliverableTile extends StatelessWidget {
             curve: Curves.easeOutCubic,
             style: theme.textTheme.titleSmall!.copyWith(
               fontWeight: FontWeight.bold,
+              fontSize: 14.5,
               decoration: deliverable.isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
-              color: deliverable.isCompleted ? Colors.grey.shade500 : null,
+              color: deliverable.isCompleted
+                  ? (isDark ? Colors.grey.shade500 : Colors.grey.shade400)
+                  : (isDark ? Colors.white : Colors.black87),
             ),
             child: Text(deliverable.title),
           ),
@@ -215,7 +219,9 @@ class DeliverableTile extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               deliverable.notes!,
-              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
+              ),
             ),
           ],
 
@@ -319,17 +325,29 @@ class DeliverableTile extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.04),
+                    color: (isDark ? Colors.white : Colors.black).withOpacity(isDark ? 0.08 : 0.04),
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: (isDark ? Colors.white : Colors.black).withOpacity(isDark ? 0.12 : 0.06),
+                      width: 0.8,
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.calendar_today, size: 12, color: Colors.grey.shade600),
+                      Icon(
+                        Icons.calendar_today,
+                        size: 12,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '${deliverable.dueDate!.month}/${deliverable.dueDate!.day}/${deliverable.dueDate!.year}',
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? Colors.grey.shade200 : Colors.grey.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -337,7 +355,7 @@ class DeliverableTile extends StatelessWidget {
 
               // Dynamic user links (GitHub, Drive, YouTube, Figma, Notion, etc.)
               for (final link in allLinks)
-                _buildLinkChip(context, link),
+                _buildLinkChip(context, link, isDark),
             ],
           ),
         ],
@@ -345,7 +363,7 @@ class DeliverableTile extends StatelessWidget {
     );
   }
 
-  Widget _buildLinkChip(BuildContext context, String url) {
+  Widget _buildLinkChip(BuildContext context, String url, bool isDark) {
     final style = _getLinkStyle(url);
     final icon = style['icon'] as IconData;
     final label = style['label'] as String;
@@ -355,14 +373,14 @@ class DeliverableTile extends StatelessWidget {
       onTap: () => _handleLinkTap(context, url),
       child: ActionChip(
         elevation: 0,
-        side: BorderSide(color: color.withOpacity(0.2)),
-        backgroundColor: color.withOpacity(0.08),
+        side: BorderSide(color: color.withOpacity(isDark ? 0.35 : 0.2)),
+        backgroundColor: color.withOpacity(isDark ? 0.16 : 0.08),
         avatar: Icon(icon, size: 14, color: color),
         label: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 150),
           child: Text(
             label,
-            style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 11, color: isDark ? Colors.white : color, fontWeight: FontWeight.w600),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
