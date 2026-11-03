@@ -16,12 +16,14 @@ class MainNavigationScreen extends StatefulWidget {
   final AuthService? authService;
   final AuthUser? currentUser;
   final LmsRepository? repository;
+  final int initialIndex;
 
   const MainNavigationScreen({
     super.key,
     this.authService,
     this.currentUser,
     this.repository,
+    this.initialIndex = 0,
   });
 
   @override
@@ -30,11 +32,12 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   // Index of the active tab: 0 = Courses, 1 = Schedule, 2 = AI Assistant (optional)
-  int _currentIndex = 0;
+  late int _currentIndex;
 
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialIndex;
     AiPreferencesService.init();
   }
 
