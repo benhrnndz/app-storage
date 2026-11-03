@@ -333,9 +333,15 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.6),
+                      color: (theme.brightness == Brightness.dark
+                          ? Colors.white.withOpacity(0.08)
+                          : Colors.white.withOpacity(0.6)),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.white.withOpacity(0.12)
+                            : Colors.grey.shade300,
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -348,7 +354,9 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: _selectedDueDate == null ? Colors.grey : Colors.black87,
+                            color: _selectedDueDate == null
+                                ? Colors.grey
+                                : (theme.brightness == Brightness.dark ? Colors.white : Colors.black87),
                           ),
                         ),
                         const Spacer(),
@@ -592,24 +600,27 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
     required String hint,
     required IconData icon,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
       labelText: label,
+      labelStyle: TextStyle(color: isDark ? Colors.grey.shade300 : null),
       hintText: hint,
-      prefixIcon: Icon(icon, size: 20),
+      hintStyle: TextStyle(color: isDark ? Colors.grey.shade500 : null),
+      prefixIcon: Icon(icon, size: 20, color: isDark ? Colors.grey.shade400 : null),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.6),
+      fillColor: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.6),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.shade300),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.shade300),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Colors.blueAccent, width: 1.8),
+        borderSide: BorderSide(color: isDark ? const Color(0xFF2DD4BF) : Colors.blueAccent, width: 1.8),
       ),
     );
   }
