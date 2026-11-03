@@ -200,18 +200,25 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                       widget.course.title,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: theme.brightness == Brightness.dark ? Colors.white : Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.person, size: 16, color: Colors.grey),
+                        Icon(
+                          Icons.person,
+                          size: 16,
+                          color: theme.brightness == Brightness.dark ? Colors.grey.shade400 : Colors.grey,
+                        ),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
                             widget.course.instructor,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey.shade700,
+                              color: theme.brightness == Brightness.dark
+                                  ? Colors.grey.shade300
+                                  : Colors.grey.shade700,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -220,7 +227,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                         Text(
                           widget.course.semester,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.grey.shade600,
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade600,
                           ),
                         ),
                       ],
@@ -237,32 +246,76 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                   child: Row(
                     children: [
                       ChoiceChip(
-                        label: const Text('All'),
+                        label: Text(
+                          'All',
+                          style: TextStyle(
+                            color: _selectedTypeFilter == null
+                                ? (theme.brightness == Brightness.dark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary)
+                                : (theme.brightness == Brightness.dark ? Colors.grey.shade300 : Colors.grey.shade700),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
                         selected: _selectedTypeFilter == null,
+                        selectedColor: (theme.brightness == Brightness.dark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary).withOpacity(0.18),
+                        backgroundColor: (theme.brightness == Brightness.dark ? Colors.white : Colors.black).withOpacity(0.05),
                         onSelected: (selected) {
                           if (selected) setState(() => _selectedTypeFilter = null);
                         },
                       ),
                       const SizedBox(width: 8),
                       ChoiceChip(
-                        label: const Text('Activities'),
+                        label: Text(
+                          'Activities',
+                          style: TextStyle(
+                            color: _selectedTypeFilter == DeliverableType.activity
+                                ? (theme.brightness == Brightness.dark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary)
+                                : (theme.brightness == Brightness.dark ? Colors.grey.shade300 : Colors.grey.shade700),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
                         selected: _selectedTypeFilter == DeliverableType.activity,
+                        selectedColor: (theme.brightness == Brightness.dark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary).withOpacity(0.18),
+                        backgroundColor: (theme.brightness == Brightness.dark ? Colors.white : Colors.black).withOpacity(0.05),
                         onSelected: (selected) {
                           setState(() => _selectedTypeFilter = selected ? DeliverableType.activity : null);
                         },
                       ),
                       const SizedBox(width: 8),
                       ChoiceChip(
-                        label: const Text('Projects'),
+                        label: Text(
+                          'Projects',
+                          style: TextStyle(
+                            color: _selectedTypeFilter == DeliverableType.project
+                                ? (theme.brightness == Brightness.dark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary)
+                                : (theme.brightness == Brightness.dark ? Colors.grey.shade300 : Colors.grey.shade700),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
                         selected: _selectedTypeFilter == DeliverableType.project,
+                        selectedColor: (theme.brightness == Brightness.dark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary).withOpacity(0.18),
+                        backgroundColor: (theme.brightness == Brightness.dark ? Colors.white : Colors.black).withOpacity(0.05),
                         onSelected: (selected) {
                           setState(() => _selectedTypeFilter = selected ? DeliverableType.project : null);
                         },
                       ),
                       const SizedBox(width: 8),
                       ChoiceChip(
-                        label: const Text('Presentations'),
+                        label: Text(
+                          'Presentations',
+                          style: TextStyle(
+                            color: _selectedTypeFilter == DeliverableType.presentation
+                                ? (theme.brightness == Brightness.dark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary)
+                                : (theme.brightness == Brightness.dark ? Colors.grey.shade300 : Colors.grey.shade700),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
                         selected: _selectedTypeFilter == DeliverableType.presentation,
+                        selectedColor: (theme.brightness == Brightness.dark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary).withOpacity(0.18),
+                        backgroundColor: (theme.brightness == Brightness.dark ? Colors.white : Colors.black).withOpacity(0.05),
                         onSelected: (selected) {
                           setState(() => _selectedTypeFilter = selected ? DeliverableType.presentation : null);
                         },
@@ -292,15 +345,23 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                                 child: Icon(Icons.inventory_2_outlined, size: 48, color: courseColor),
                               ),
                               const SizedBox(height: 16),
-                              const Text(
+                              Text(
                                 'No deliverables recorded in this category.',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: theme.brightness == Brightness.dark ? Colors.white : Colors.black87,
+                                ),
                               ),
                               const SizedBox(height: 6),
                               Text(
                                 'Track activities, assignments, code repositories, or video demonstrations for this course.',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.3),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: theme.brightness == Brightness.dark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                  height: 1.3,
+                                ),
                               ),
                               const SizedBox(height: 20),
                               BouncyTap(
