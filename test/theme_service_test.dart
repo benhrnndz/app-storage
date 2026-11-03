@@ -121,6 +121,47 @@ void main() {
       expect(ThemeService.isDarkMode, false);
       expect(find.byTooltip('Switch to Night Version'), findsOneWidget);
     });
+
+    testWidgets('Toggling theme mode while on Schedule tab preserves Schedule tab view', (WidgetTester tester) async {
+      final authService = MockAuthService(startLoggedIn: true);
+      final repository = LocalLmsRepository();
+
+      await tester.pumpWidget(StudentLmsApp(
+        authService: authService,
+        repository: repository,
+      ));
+      await tester.pumpAndSettle();
+
+      // Initially on Courses tab
+      expect(find.text('Courses'), findsWidgets);
+
+      // Navigate to Schedule / Calendar tab
+      await tester.tap(find.text('Schedule'));
+      await tester.pumpAndSettle();
+
+      // Verify we are on Schedule Screen
+      expect(find.text('Class Schedule & Calendar'), findsOneWidget);
+
+      // Tap Theme Toggle (switch to Night mode) from Schedule Screen AppBar
+      await tester.tap(find.byTooltip('Switch to Night Version').first);
+      await tester.pumpAndSettle();
+
+      // Verify night mode is active
+      expect(ThemeService.isDarkMode, true);
+
+      // Verify we are STILL on Schedule Screen, NOT booted to Courses!
+      expect(find.text('Class Schedule & Calendar'), findsOneWidget);
+
+      // Tap Theme Toggle again (switch back to Day mode)
+      await tester.tap(find.byTooltip('Switch to Day Mode').first);
+      await tester.pumpAndSettle();
+
+      // Verify day mode is restored
+      expect(ThemeService.isDarkMode, false);
+
+      // Verify we STILL remain on Schedule Screen!
+      expect(find.text('Class Schedule & Calendar'), findsOneWidget);
+    });
   });
 }
 
