@@ -1,6 +1,8 @@
 // lib/features/schedule/screens/schedule_screen.dart
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import '../../../core/theme/theme_service.dart';
 import '../../../core/widgets/ambient_background.dart';
 import '../../../core/widgets/bouncy_tap.dart';
@@ -23,11 +25,7 @@ class ScheduleScreen extends StatefulWidget {
   final LmsRepository? repository;
   final String? userId;
 
-  const ScheduleScreen({
-    super.key,
-    this.repository,
-    this.userId,
-  });
+  const ScheduleScreen({super.key, this.repository, this.userId});
 
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
@@ -108,13 +106,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.green.shade700,
-            content: Text('✓ Class reminders enabled ($_reminderMinutes mins before class)'),
+            content: Text(
+              '✓ Class reminders enabled ($_reminderMinutes mins before class)',
+            ),
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Notification permissions were not granted by your browser or device.'),
+            content: Text(
+              'Notification permissions were not granted by your browser or device.',
+            ),
           ),
         );
       }
@@ -142,7 +144,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         .toList();
     if (availableCourses.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please create at least one active course before adding class sessions.')),
+        const SnackBar(
+          content: Text(
+            'Please create at least one active course before adding class sessions.',
+          ),
+        ),
       );
       return;
     }
@@ -163,7 +169,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   backgroundColor: Colors.green.shade700,
-                  content: Text(slotToEdit != null ? '✓ Schedule updated' : '✓ Added class session'),
+                  content: Text(
+                    slotToEdit != null
+                        ? '✓ Schedule updated'
+                        : '✓ Added class session',
+                  ),
                 ),
               );
             }
@@ -173,7 +183,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  void _openScheduleSettingsModal(List<Course> courses, List<ScheduleSlot> slots) {
+  void _openScheduleSettingsModal(
+    List<Course> courses,
+    List<ScheduleSlot> slots,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -207,32 +220,62 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.event_available_outlined, color: Colors.blueAccent),
-                    title: const Text('Add to Google Calendar', style: TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Pre-fills weekly recurring class in Google Calendar', style: TextStyle(fontSize: 12)),
+                    leading: const Icon(
+                      Icons.event_available_outlined,
+                      color: Colors.blueAccent,
+                    ),
+                    title: const Text(
+                      'Add to Google Calendar',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: const Text(
+                      'Pre-fills weekly recurring class in Google Calendar',
+                      style: TextStyle(fontSize: 12),
+                    ),
                     onTap: () async {
                       Navigator.pop(context);
                       final course = _getCourseForSlot(courses, slot);
                       if (course != null) {
-                        await CalendarSyncService.launchGoogleCalendar(course: course, slot: slot);
+                        await CalendarSyncService.launchGoogleCalendar(
+                          course: course,
+                          slot: slot,
+                        );
                       }
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.edit_outlined, color: Colors.blueAccent),
-                    title: const Text('Edit Class Slot', style: TextStyle(fontWeight: FontWeight.w600)),
+                    leading: const Icon(
+                      Icons.edit_outlined,
+                      color: Colors.blueAccent,
+                    ),
+                    title: const Text(
+                      'Edit Class Slot',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       _openAddScheduleModal(courses, slot);
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                    title: const Text('Delete Class Slot', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
+                    leading: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.redAccent,
+                    ),
+                    title: const Text(
+                      'Delete Class Slot',
+                      style: TextStyle(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     onTap: () async {
                       Navigator.pop(context);
                       if (widget.repository != null) {
-                        await widget.repository!.deleteScheduleSlot(_userId, slot.id);
+                        await widget.repository!.deleteScheduleSlot(
+                          _userId,
+                          slot.id,
+                        );
                       }
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -284,12 +327,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     // Re-use initialized streams to prevent duplicate Firestore subscriptions on UI redraws
-    final coursesStream = _coursesStream ??
+    final coursesStream =
+        _coursesStream ??
         (widget.repository != null
             ? widget.repository!.watchCourses(_userId)
             : Stream.value(mockCourses));
 
-    final schedulesStream = _schedulesStream ??
+    final schedulesStream =
+        _schedulesStream ??
         (widget.repository != null
             ? widget.repository!.watchSchedules(_userId)
             : Stream.value(mockSchedules));
@@ -297,14 +342,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return StreamBuilder<List<Course>>(
       stream: coursesStream,
       builder: (context, courseSnapshot) {
-        final courses = courseSnapshot.data ?? (widget.repository != null ? const <Course>[] : mockCourses);
+        final courses =
+            courseSnapshot.data ??
+            (widget.repository != null ? const <Course>[] : mockCourses);
 
         return StreamBuilder<List<ScheduleSlot>>(
           stream: schedulesStream,
           builder: (context, scheduleSnapshot) {
-            final isLoading = (courseSnapshot.connectionState == ConnectionState.waiting && !courseSnapshot.hasData) ||
-                (scheduleSnapshot.connectionState == ConnectionState.waiting && !scheduleSnapshot.hasData);
-            final slots = scheduleSnapshot.data ?? (widget.repository != null ? const <ScheduleSlot>[] : mockSchedules);
+            final isLoading =
+                (courseSnapshot.connectionState == ConnectionState.waiting &&
+                    !courseSnapshot.hasData) ||
+                (scheduleSnapshot.connectionState == ConnectionState.waiting &&
+                    !scheduleSnapshot.hasData);
+            final slots =
+                scheduleSnapshot.data ??
+                (widget.repository != null
+                    ? const <ScheduleSlot>[]
+                    : mockSchedules);
 
             return Scaffold(
               appBar: FrostedAppBar(
@@ -344,23 +398,26 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         children: [
                           // View Switcher: "Calendar Agenda" vs "Timetable Settings"
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                             child: _buildViewSwitcher(
                               Theme.of(context).brightness == Brightness.dark,
                               Theme.of(context).colorScheme.primary,
                             ),
                           ),
 
-                    const Divider(height: 1),
+                          const Divider(height: 1),
 
-                    // Main View Content
-                    Expanded(
-                      child: _viewMode == 0
-                          ? _buildCalendarAgendaView(slots, courses)
-                          : _buildTimetableSetupView(slots, courses),
-                    ),
-                  ],
-                ),
+                          // Main View Content
+                          Expanded(
+                            child: _viewMode == 0
+                                ? _buildCalendarAgendaView(slots, courses)
+                                : _buildTimetableSetupView(slots, courses),
+                          ),
+                        ],
+                      ),
               ),
             );
           },
@@ -418,7 +475,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }) {
     final isSelected = _viewMode == index;
     final activeColor = isDark ? const Color(0xFF2DD4BF) : primaryColor;
-    final unselectedColor = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+    final unselectedColor = isDark
+        ? Colors.grey.shade400
+        : Colors.grey.shade600;
 
     return BouncyTap(
       onTap: () => setState(() => _viewMode = index),
@@ -433,10 +492,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               : Colors.transparent,
           borderRadius: BorderRadius.circular(13),
           border: isSelected
-              ? Border.all(
-                  color: activeColor.withOpacity(0.35),
-                  width: 1.0,
-                )
+              ? Border.all(color: activeColor.withOpacity(0.35), width: 1.0)
               : Border.all(color: Colors.transparent, width: 1.0),
           boxShadow: isSelected
               ? [
@@ -475,7 +531,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   // ==========================================
   // VIEW 1: DEDICATED CALENDAR AGENDA
   // ==========================================
-  Widget _buildCalendarAgendaView(List<ScheduleSlot> slots, List<Course> courses) {
+  Widget _buildCalendarAgendaView(
+    List<ScheduleSlot> slots,
+    List<Course> courses,
+  ) {
     _checkUpcomingReminders(slots, courses);
     final selectedDayOfWeek = _selectedDate.weekday;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -505,16 +564,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: (isDark
-                    ? const Color(0xFF2DD4BF)
-                    : Theme.of(context).colorScheme.primary)
-                .withOpacity(isDark ? 0.12 : 0.08),
+            color:
+                (isDark
+                        ? const Color(0xFF2DD4BF)
+                        : Theme.of(context).colorScheme.primary)
+                    .withOpacity(isDark ? 0.12 : 0.08),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: (isDark
-                      ? const Color(0xFF2DD4BF)
-                      : Theme.of(context).colorScheme.primary)
-                  .withOpacity(isDark ? 0.30 : 0.20),
+              color:
+                  (isDark
+                          ? const Color(0xFF2DD4BF)
+                          : Theme.of(context).colorScheme.primary)
+                      .withOpacity(isDark ? 0.30 : 0.20),
               width: 1.0,
             ),
           ),
@@ -555,7 +616,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.event_busy, size: 48, color: isDark ? Colors.grey.shade600 : Colors.grey.shade400),
+                        Icon(
+                          Icons.event_busy,
+                          size: 48,
+                          color: isDark
+                              ? Colors.grey.shade600
+                              : Colors.grey.shade400,
+                        ),
                         const SizedBox(height: 10),
                         Text(
                           'No scheduled classes for this day.',
@@ -571,7 +638,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 12.5,
-                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
+                            color: isDark
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade500,
                           ),
                         ),
                       ],
@@ -579,7 +648,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 100),
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 8,
+                    bottom: 100,
+                  ),
                   itemCount: activeAgendaSlots.length,
                   itemBuilder: (context, index) {
                     final slot = activeAgendaSlots[index];
@@ -607,14 +681,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
-                                      color: isDark ? Colors.white : Colors.black87,
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black87,
                                     ),
                                   ),
                                   Text(
                                     slot.endTime,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                      color: isDark
+                                          ? Colors.grey.shade400
+                                          : Colors.grey.shade600,
                                     ),
                                   ),
                                 ],
@@ -623,31 +701,48 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               Container(
                                 width: 3,
                                 height: 48,
-                                decoration: BoxDecoration(color: courseColor, borderRadius: BorderRadius.circular(2)),
+                                decoration: BoxDecoration(
+                                  color: courseColor,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(course.code, style: TextStyle(fontWeight: FontWeight.bold, color: courseColor, fontSize: 14)),
+                                    Text(
+                                      course.code,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: courseColor,
+                                        fontSize: 14,
+                                      ),
+                                    ),
                                     Text(
                                       course.title,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                         fontSize: 14,
-                                        color: isDark ? Colors.white : Colors.black87,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
                                       ),
                                     ),
                                     const SizedBox(height: 6),
                                     Row(
                                       children: [
                                         Icon(
-                                          slot.roomOrLink.contains('Online') || slot.roomOrLink.contains('Zoom')
+                                          slot.roomOrLink.contains('Online') ||
+                                                  slot.roomOrLink.contains(
+                                                    'Zoom',
+                                                  )
                                               ? Icons.videocam_outlined
                                               : Icons.location_on_outlined,
                                           size: 14,
-                                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                          color: isDark
+                                              ? Colors.grey.shade400
+                                              : Colors.grey.shade600,
                                         ),
                                         const SizedBox(width: 4),
                                         Expanded(
@@ -655,7 +750,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                             slot.roomOrLink,
                                             style: TextStyle(
                                               fontSize: 12,
-                                              color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                                              color: isDark
+                                                  ? Colors.grey.shade300
+                                                  : Colors.grey.shade700,
                                             ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -684,7 +781,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = isDark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary;
+    final primaryColor = isDark
+        ? const Color(0xFF2DD4BF)
+        : theme.colorScheme.primary;
 
     return GlassContainer(
       borderRadius: 22,
@@ -694,26 +793,27 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: weekDays.map((date) {
-          final isSelected = date.year == _selectedDate.year &&
+          final isSelected =
+              date.year == _selectedDate.year &&
               date.month == _selectedDate.month &&
               date.day == _selectedDate.day;
 
-          final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
+          final isToday =
+              date.year == now.year &&
+              date.month == now.month &&
+              date.day == now.day;
 
           return BouncyTap(
             scaleDown: 0.94,
             onTap: () => setState(() => _selectedDate = date),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
+              duration: const Duration(milliseconds: 90),
               curve: Curves.easeOutCubic,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                gradient: isSelected
+                gradient: isSelectedflut
                     ? LinearGradient(
-                        colors: [
-                          primaryColor,
-                          const Color(0xFF10B981),
-                        ],
+                        colors: [primaryColor, const Color(0xFF10B981)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )
@@ -721,10 +821,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 color: isSelected ? null : Colors.transparent,
                 borderRadius: BorderRadius.circular(15),
                 border: isToday && !isSelected
-                    ? Border.all(color: primaryColor.withOpacity(0.5), width: 1.2)
+                    ? Border.all(
+                        color: primaryColor.withOpacity(0.5),
+                        width: 1.2,
+                      )
                     : isSelected
-                        ? Border.all(color: Colors.white.withOpacity(0.35), width: 1.0)
-                        : Border.all(color: Colors.transparent, width: 1.0),
+                    ? Border.all(
+                        color: Colors.white.withOpacity(0.35),
+                        width: 1.0,
+                      )
+                    : Border.all(color: Colors.transparent, width: 1.0),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
@@ -745,7 +851,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       fontWeight: FontWeight.w600,
                       color: isSelected
                           ? Colors.white
-                          : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                          : (isDark
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade600),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -783,11 +891,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   // ==========================================
   // VIEW 2: TIMETABLE SETUP & CALENDAR TOGGLE
   // ==========================================
-  Widget _buildTimetableSetupView(List<ScheduleSlot> slots, List<Course> courses) {
+  Widget _buildTimetableSetupView(
+    List<ScheduleSlot> slots,
+    List<Course> courses,
+  ) {
     // 1. Filter out orphan slots whose courses were deleted
-    final validSlots = slots.where((slot) => _getCourseForSlot(courses, slot) != null).toList();
-    final activeSlots = validSlots.where((s) => !_getCourseForSlot(courses, s)!.isArchived).toList();
-    final archivedSlots = validSlots.where((s) => _getCourseForSlot(courses, s)!.isArchived).toList();
+    final validSlots = slots
+        .where((slot) => _getCourseForSlot(courses, slot) != null)
+        .toList();
+    final activeSlots = validSlots
+        .where((s) => !_getCourseForSlot(courses, s)!.isArchived)
+        .toList();
+    final archivedSlots = validSlots
+        .where((s) => _getCourseForSlot(courses, s)!.isArchived)
+        .toList();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ListView(
@@ -800,7 +917,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.calendar_today, size: 52, color: isDark ? Colors.grey.shade500 : Colors.grey.shade400),
+                  Icon(
+                    Icons.calendar_today,
+                    size: 52,
+                    color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                  ),
                   const SizedBox(height: 10),
                   Text(
                     'No class sessions created yet.',
@@ -836,7 +957,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ),
             ),
           ),
-          ...activeSlots.map((slot) => _buildTimetableSlotTile(slot, courses, isArchived: false)),
+          ...activeSlots.map(
+            (slot) => _buildTimetableSlotTile(slot, courses, isArchived: false),
+          ),
         ],
 
         if (archivedSlots.isNotEmpty) ...[
@@ -845,14 +968,22 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             padding: const EdgeInsets.only(bottom: 8, left: 4),
             child: Row(
               children: [
-                Icon(Icons.archive_outlined, size: 16, color: isDark ? Colors.orange.shade300 : Colors.orange.shade800),
+                Icon(
+                  Icons.archive_outlined,
+                  size: 16,
+                  color: isDark
+                      ? Colors.orange.shade300
+                      : Colors.orange.shade800,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   'ARCHIVED COURSE SCHEDULES (${archivedSlots.length})',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.orange.shade300 : Colors.orange.shade800,
+                    color: isDark
+                        ? Colors.orange.shade300
+                        : Colors.orange.shade800,
                     letterSpacing: 1.1,
                   ),
                 ),
@@ -863,32 +994,53 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDark ? Colors.orange.shade900.withOpacity(0.25) : Colors.orange.shade50,
+              color: isDark
+                  ? Colors.orange.shade900.withOpacity(0.25)
+                  : Colors.orange.shade50,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isDark ? Colors.orange.shade400.withOpacity(0.3) : Colors.orange.shade200,
+                color: isDark
+                    ? Colors.orange.shade400.withOpacity(0.3)
+                    : Colors.orange.shade200,
               ),
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, size: 18, color: isDark ? Colors.orange.shade300 : Colors.orange.shade800),
+                Icon(
+                  Icons.info_outline,
+                  size: 18,
+                  color: isDark
+                      ? Colors.orange.shade300
+                      : Colors.orange.shade800,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Classes below belong to archived courses. Their calendar sync is suspended and will not appear on your calendar.',
-                    style: TextStyle(fontSize: 12, color: isDark ? Colors.orange.shade200 : Colors.orange.shade900),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark
+                          ? Colors.orange.shade200
+                          : Colors.orange.shade900,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          ...archivedSlots.map((slot) => _buildTimetableSlotTile(slot, courses, isArchived: true)),
+          ...archivedSlots.map(
+            (slot) => _buildTimetableSlotTile(slot, courses, isArchived: true),
+          ),
         ],
       ],
     );
   }
 
-  Widget _buildTimetableSlotTile(ScheduleSlot slot, List<Course> courses, {required bool isArchived}) {
+  Widget _buildTimetableSlotTile(
+    ScheduleSlot slot,
+    List<Course> courses, {
+    required bool isArchived,
+  }) {
     final course = _getCourseForSlot(courses, slot);
     if (course == null) return const SizedBox.shrink();
     final courseColor = Color(course.colorValue);
@@ -901,7 +1053,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         blur: 14,
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
-        borderColor: isArchived ? Colors.orange.shade300.withOpacity(0.5) : null,
+        borderColor: isArchived
+            ? Colors.orange.shade300.withOpacity(0.5)
+            : null,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -911,15 +1065,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
-                        color: (isArchived ? Colors.orange : courseColor).withOpacity(0.12),
+                        color: (isArchived ? Colors.orange : courseColor)
+                            .withOpacity(0.12),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         slot.dayName.toUpperCase(),
                         style: TextStyle(
-                          color: isArchived ? (isDark ? Colors.orange.shade300 : Colors.orange.shade800) : courseColor,
+                          color: isArchived
+                              ? (isDark
+                                    ? Colors.orange.shade300
+                                    : Colors.orange.shade800)
+                              : courseColor,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -928,9 +1090,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     if (isArchived) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.orange.shade900.withOpacity(0.3) : Colors.orange.shade100,
+                          color: isDark
+                              ? Colors.orange.shade900.withOpacity(0.3)
+                              : Colors.orange.shade100,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -938,7 +1105,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.orange.shade300 : Colors.orange.shade900,
+                            color: isDark
+                                ? Colors.orange.shade300
+                                : Colors.orange.shade900,
                           ),
                         ),
                       ),
@@ -992,7 +1161,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                           color: isArchived
-                              ? (isDark ? Colors.orange.shade300 : Colors.orange.shade800)
+                              ? (isDark
+                                    ? Colors.orange.shade300
+                                    : Colors.orange.shade800)
                               : (isDark ? Colors.white : Colors.black87),
                         ),
                       ),
@@ -1000,15 +1171,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         isArchived
                             ? 'Archived course — hidden from calendar agenda. Unarchive course to reactivate.'
                             : (slot.isCalendarSyncEnabled
-                                ? 'Active: Visible in your calendar agenda'
-                                : 'Disabled: Hidden from calendar agenda'),
+                                  ? 'Active: Visible in your calendar agenda'
+                                  : 'Disabled: Hidden from calendar agenda'),
                         style: TextStyle(
                           fontSize: 11,
                           color: isArchived
-                              ? (isDark ? Colors.grey.shade400 : Colors.grey.shade600)
+                              ? (isDark
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade600)
                               : (slot.isCalendarSyncEnabled
-                                  ? (isDark ? const Color(0xFF34D399) : Colors.green.shade700)
-                                  : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+                                    ? (isDark
+                                          ? const Color(0xFF34D399)
+                                          : Colors.green.shade700)
+                                    : (isDark
+                                          ? Colors.grey.shade400
+                                          : Colors.grey.shade600)),
                         ),
                       ),
                     ],
@@ -1017,13 +1194,19 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 if (!isArchived)
                   Switch(
                     value: slot.isCalendarSyncEnabled,
-                    activeColor: isDark ? const Color(0xFF2DD4BF) : Colors.blueAccent,
+                    activeColor: isDark
+                        ? const Color(0xFF2DD4BF)
+                        : Colors.blueAccent,
                     onChanged: (_) => _toggleCalendarSync(slot, courses),
                   )
                 else
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Icon(Icons.lock_clock, size: 22, color: Colors.orangeAccent),
+                    child: Icon(
+                      Icons.lock_clock,
+                      size: 22,
+                      color: Colors.orangeAccent,
+                    ),
                   ),
               ],
             ),
