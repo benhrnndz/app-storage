@@ -811,7 +811,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               curve: Curves.easeOutCubic,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                gradient: isSelectedflut
+                gradient: isSelected
                     ? LinearGradient(
                         colors: [primaryColor, const Color(0xFF10B981)],
                         begin: Alignment.topLeft,
