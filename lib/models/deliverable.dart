@@ -7,6 +7,63 @@ enum DeliverableType {
   presentation,
 }
 
+/// Represents a single file or photo attached to a deliverable.
+class DeliverableAttachment {
+  /// The public download URL or self-contained base64 data URI.
+  final String url;
+
+  /// The original filename (e.g. "wireframe.png", "report.pdf").
+  final String name;
+
+  /// Optional file size in bytes.
+  final int? sizeBytes;
+
+  const DeliverableAttachment({
+    required this.url,
+    required this.name,
+    this.sizeBytes,
+  });
+
+  /// Whether the attachment is an image based on its extension or data URI scheme.
+  bool get isImage {
+    final lower = name.toLowerCase();
+    if (url.startsWith('data:image/')) return true;
+    return lower.endsWith('.png') ||
+        lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.webp') ||
+        lower.endsWith('.gif') ||
+        lower.endsWith('.heic') ||
+        lower.endsWith('.bmp');
+  }
+
+  /// Human-readable file size (e.g., "120 KB", "1.4 MB").
+  String get formattedSize {
+    if (sizeBytes == null || sizeBytes! <= 0) return '';
+    if (sizeBytes! < 1024) return '${sizeBytes!} B';
+    if (sizeBytes! < 1024 * 1024) {
+      return '${(sizeBytes! / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(sizeBytes! / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'url': url,
+      'name': name,
+      if (sizeBytes != null) 'sizeBytes': sizeBytes,
+    };
+  }
+
+  factory DeliverableAttachment.fromMap(Map<String, dynamic> map) {
+    return DeliverableAttachment(
+      url: map['url']?.toString() ?? '',
+      name: map['name']?.toString() ?? 'Attachment',
+      sizeBytes: map['sizeBytes'] is int ? map['sizeBytes'] as int : null,
+    );
+  }
+}
+
 /// Represents any coursework submitted or tracked under a course.
 class Deliverable {
   /// Unique identifier.
@@ -30,11 +87,12 @@ class Deliverable {
   /// Dynamic collection of optional links (GitHub, Drive, YouTube, Figma, Notion, or any website).
   final List<String> links;
 
-  /// Uploaded photo or file attachment URL (Firebase Cloud Storage).
-  final String? attachmentUrl;
+  /// Collection of photo and file attachments.
+  final List<DeliverableAttachment> attachments;
 
-  /// Original filename of the attachment (e.g. "wireframe.png", "lab_report.pdf").
-  final String? attachmentName;
+  /// Backing fields for legacy single-attachment fields
+  final String? _legacyAttachmentUrl;
+  final String? _legacyAttachmentName;
 
   /// Optional repository link preserved for backward compatibility.
   final String? repoUrl;
@@ -56,13 +114,15 @@ class Deliverable {
     this.dueDate,
     this.isCompleted = false,
     this.links = const [],
-    this.attachmentUrl,
-    this.attachmentName,
+    this.attachments = const [],
+    String? attachmentUrl,
+    String? attachmentName,
     this.repoUrl,
     this.videoDemoUrl,
     this.notes,
     required this.createdAt,
-  });
+  })  : _legacyAttachmentUrl = attachmentUrl,
+        _legacyAttachmentName = attachmentName;
 
   /// Consolidates all links, including any legacy repoUrl or videoDemoUrl.
   List<String> get allLinks {
@@ -76,18 +136,84 @@ class Deliverable {
     return result;
   }
 
-  /// Whether the attached file is an image based on its filename or URL extension.
+  /// All attachments, synthesizing from legacy single-attachment fields if necessary.
+  List<DeliverableAttachment> get allAttachments {
+    if (attachments.isNotEmpty) return attachments;
+    if (_legacyAttachmentUrl != null && _legacyAttachmentUrl!.isNotEmpty) {
+      return [
+        DeliverableAttachment(
+          url: _legacyAttachmentUrl!,
+          name: _legacyAttachmentName ?? 'Attachment',
+        ),
+      ];
+    }
+    return const [];
+  }
+
+  /// URL of first attachment or legacy attachmentUrl.
+  String? get attachmentUrl {
+    if (attachments.isNotEmpty) return attachments.first.url;
+    return _legacyAttachmentUrl;
+  }
+
+  /// Filename of first attachment or legacy attachmentName.
+  String? get attachmentName {
+    if (attachments.isNotEmpty) return attachments.first.name;
+    return _legacyAttachmentName;
+  }
+
+  /// Whether any attached file is an image based on its filename or URL.
   bool get isAttachmentImage {
-    final name = (attachmentName ?? attachmentUrl ?? '').toLowerCase();
-    return name.contains('.png') ||
-        name.contains('.jpg') ||
-        name.contains('.jpeg') ||
-        name.contains('.webp') ||
-        name.contains('.gif');
+    return allAttachments.any((a) => a.isImage);
+  }
+
+  /// All image attachments.
+  List<DeliverableAttachment> get imageAttachments {
+    return allAttachments.where((a) => a.isImage).toList();
+  }
+
+  /// All non-image file attachments (e.g. PDFs, documents, archives).
+  List<DeliverableAttachment> get fileAttachments {
+    return allAttachments.where((a) => !a.isImage).toList();
+  }
+
+  Deliverable copyWith({
+    String? id,
+    String? courseId,
+    String? title,
+    DeliverableType? type,
+    DateTime? dueDate,
+    bool? isCompleted,
+    List<String>? links,
+    List<DeliverableAttachment>? attachments,
+    String? attachmentUrl,
+    String? attachmentName,
+    String? repoUrl,
+    String? videoDemoUrl,
+    String? notes,
+    DateTime? createdAt,
+  }) {
+    return Deliverable(
+      id: id ?? this.id,
+      courseId: courseId ?? this.courseId,
+      title: title ?? this.title,
+      type: type ?? this.type,
+      dueDate: dueDate ?? this.dueDate,
+      isCompleted: isCompleted ?? this.isCompleted,
+      links: links ?? this.links,
+      attachments: attachments ?? allAttachments,
+      attachmentUrl: attachmentUrl ?? this.attachmentUrl,
+      attachmentName: attachmentName ?? this.attachmentName,
+      repoUrl: repoUrl ?? this.repoUrl,
+      videoDemoUrl: videoDemoUrl ?? this.videoDemoUrl,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 
   /// Converts the Deliverable object into a Map for cloud/local persistence.
   Map<String, dynamic> toMap() {
+    final currentAttachments = allAttachments;
     return {
       'id': id,
       'courseId': courseId,
@@ -96,6 +222,7 @@ class Deliverable {
       'dueDate': dueDate?.toIso8601String(),
       'isCompleted': isCompleted,
       'links': allLinks,
+      'attachments': currentAttachments.map((a) => a.toMap()).toList(),
       'attachmentUrl': attachmentUrl,
       'attachmentName': attachmentName,
       'repoUrl': repoUrl ?? (allLinks.isNotEmpty ? allLinks.first : null),
@@ -122,6 +249,30 @@ class Deliverable {
       }
     }
 
+    // Parse multi-attachments if present
+    List<DeliverableAttachment> parsedAttachments = [];
+    final rawAttachments = map['attachments'];
+    if (rawAttachments is List) {
+      for (final item in rawAttachments) {
+        if (item is Map<String, dynamic>) {
+          parsedAttachments.add(DeliverableAttachment.fromMap(item));
+        } else if (item is Map) {
+          parsedAttachments.add(DeliverableAttachment.fromMap(Map<String, dynamic>.from(item)));
+        }
+      }
+    }
+
+    final legacyUrl = (map['attachmentUrl'] ?? map['photoUrl'])?.toString();
+    final legacyName = map['attachmentName']?.toString();
+    if (parsedAttachments.isEmpty && legacyUrl != null && legacyUrl.isNotEmpty) {
+      parsedAttachments.add(
+        DeliverableAttachment(
+          url: legacyUrl,
+          name: legacyName ?? 'Attachment',
+        ),
+      );
+    }
+
     return Deliverable(
       id: documentId,
       courseId: map['courseId'] ?? '',
@@ -133,8 +284,9 @@ class Deliverable {
       dueDate: map['dueDate'] != null ? DateTime.tryParse(map['dueDate']) : null,
       isCompleted: map['isCompleted'] ?? false,
       links: parsedLinks,
-      attachmentUrl: map['attachmentUrl'] ?? map['photoUrl'],
-      attachmentName: map['attachmentName'],
+      attachments: parsedAttachments,
+      attachmentUrl: legacyUrl,
+      attachmentName: legacyName,
       repoUrl: map['repoUrl'],
       videoDemoUrl: map['videoDemoUrl'],
       notes: map['notes'],
@@ -144,4 +296,3 @@ class Deliverable {
     );
   }
 }
-

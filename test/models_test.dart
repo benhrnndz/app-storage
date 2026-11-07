@@ -81,6 +81,58 @@ void main() {
       expect(restored.attachmentName, 'diagram.png');
       expect(restored.isAttachmentImage, isTrue);
     });
+
+    test('Deliverable supports multiple photo and file attachments', () {
+      const att1 = DeliverableAttachment(
+        url: 'https://example.com/mockup.png',
+        name: 'mockup.png',
+        sizeBytes: 153600, // 150 KB
+      );
+      const att2 = DeliverableAttachment(
+        url: 'https://example.com/whiteboard.jpg',
+        name: 'whiteboard.jpg',
+        sizeBytes: 2457600, // 2.3 MB
+      );
+      const att3 = DeliverableAttachment(
+        url: 'https://example.com/spec.pdf',
+        name: 'spec.pdf',
+        sizeBytes: 524288, // 512 KB
+      );
+
+      expect(att1.isImage, isTrue);
+      expect(att1.formattedSize, '150.0 KB');
+      expect(att2.isImage, isTrue);
+      expect(att2.formattedSize, '2.3 MB');
+      expect(att3.isImage, isFalse);
+      expect(att3.formattedSize, '512.0 KB');
+
+      final deliverable = Deliverable(
+        id: 'd_multi',
+        courseId: 'c1',
+        title: 'Multi-Attachment Milestone',
+        type: DeliverableType.project,
+        attachments: const [att1, att2, att3],
+        createdAt: DateTime.now(),
+      );
+
+      expect(deliverable.attachments.length, 3);
+      expect(deliverable.allAttachments.length, 3);
+      expect(deliverable.imageAttachments.length, 2);
+      expect(deliverable.fileAttachments.length, 1);
+      expect(deliverable.attachmentUrl, 'https://example.com/mockup.png');
+      expect(deliverable.attachmentName, 'mockup.png');
+      expect(deliverable.isAttachmentImage, isTrue);
+
+      final map = deliverable.toMap();
+      expect(map['attachments'], isA<List>());
+      expect((map['attachments'] as List).length, 3);
+
+      final restored = Deliverable.fromMap(map, 'd_multi');
+      expect(restored.attachments.length, 3);
+      expect(restored.imageAttachments.length, 2);
+      expect(restored.fileAttachments.length, 1);
+      expect(restored.fileAttachments.first.name, 'spec.pdf');
+    });
   });
 
   group('ScheduleSlot Model Tests', () {
