@@ -1,4 +1,5 @@
 // lib/features/courses/widgets/add_deliverable_modal.dart
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -7,8 +8,43 @@ import '../../../core/widgets/glass_card.dart';
 import '../../../data/services/storage_service.dart';
 import '../../../models/deliverable.dart';
 
+/// Temporary local model representing an attachment during modal composition.
+class _LocalAttachmentItem {
+  final String? existingUrl;
+  final String name;
+  final Uint8List? bytes;
+  final int? sizeBytes;
+
+  const _LocalAttachmentItem({
+    this.existingUrl,
+    required this.name,
+    this.bytes,
+    this.sizeBytes,
+  });
+
+  bool get isImage {
+    final lower = name.toLowerCase();
+    if (existingUrl?.startsWith('data:image/') == true) return true;
+    return lower.endsWith('.png') ||
+        lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.webp') ||
+        lower.endsWith('.gif') ||
+        lower.endsWith('.heic') ||
+        lower.endsWith('.bmp');
+  }
+
+  String get formattedSize {
+    final s = sizeBytes ?? bytes?.lengthInBytes;
+    if (s == null || s <= 0) return '';
+    if (s < 1024) return '$s B';
+    if (s < 1024 * 1024) return '${(s / 1024).toStringAsFixed(1)} KB';
+    return '${(s / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+}
+
 /// Modal bottom sheet allowing students to add or edit coursework deliverables,
-/// with photo/file attachments and an arbitrary number of optional web links.
+/// with multiple photo/file attachments and an arbitrary number of optional web links.
 class AddDeliverableModal extends StatefulWidget {
   final String courseId;
   final Deliverable? deliverableToEdit;
@@ -40,11 +76,8 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
   DateTime? _selectedDueDate;
   late bool _isCompleted;
 
-  // Attachment state (photo or file)
-  String? _existingAttachmentUrl;
-  String? _existingAttachmentName;
-  Uint8List? _newAttachmentBytes;
-  String? _newAttachmentName;
+  // Multi-attachment state
+  final List<_LocalAttachmentItem> _attachments = [];
   bool _isUploading = false;
 
   @override
@@ -57,8 +90,16 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
     _selectedDueDate = d?.dueDate ?? DateTime.now().add(const Duration(days: 7));
     _isCompleted = d?.isCompleted ?? false;
 
-    _existingAttachmentUrl = d?.attachmentUrl;
-    _existingAttachmentName = d?.attachmentName;
+    // Populate existing attachments
+    if (d != null) {
+      for (final att in d.allAttachments) {
+        _attachments.add(_LocalAttachmentItem(
+          existingUrl: att.url,
+          name: att.name,
+          sizeBytes: att.sizeBytes,
+        ));
+      }
+    }
 
     // Populate existing links if editing, or start with 1 empty optional link field
     if (d != null && d.allLinks.isNotEmpty) {
@@ -110,13 +151,22 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
   Future<void> _pickPhoto() async {
     try {
       final picker = ImagePicker();
-      final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-      if (picked != null) {
-        final bytes = await picked.readAsBytes();
-        setState(() {
-          _newAttachmentBytes = bytes;
-          _newAttachmentName = picked.name;
-        });
+      final pickedList = await picker.pickMultiImage(
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 70,
+      );
+      if (pickedList.isNotEmpty) {
+        for (final picked in pickedList) {
+          final bytes = await picked.readAsBytes();
+          setState(() {
+            _attachments.add(_LocalAttachmentItem(
+              name: picked.name,
+              bytes: bytes,
+              sizeBytes: bytes.lengthInBytes,
+            ));
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -129,30 +179,32 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
 
   Future<void> _pickDocumentFile() async {
     try {
-      final files = await FilePicker.pickFiles();
-      if (files.isNotEmpty) {
-        final file = files.first;
-        final bytes = await file.readAsBytes();
-        setState(() {
-          _newAttachmentBytes = bytes;
-          _newAttachmentName = file.name;
-        });
+      final pickedFiles = await FilePicker.pickFiles();
+      if (pickedFiles.isNotEmpty) {
+        for (final file in pickedFiles) {
+          final bytes = await file.readAsBytes();
+          final size = file.lengthSync() ?? bytes.lengthInBytes;
+          setState(() {
+            _attachments.add(_LocalAttachmentItem(
+              name: file.name,
+              bytes: bytes,
+              sizeBytes: size,
+            ));
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not pick file: $e')),
+          SnackBar(content: Text('Could not pick files: $e')),
         );
       }
     }
   }
 
-  void _removeAttachment() {
+  void _removeAttachment(int index) {
     setState(() {
-      _newAttachmentBytes = null;
-      _newAttachmentName = null;
-      _existingAttachmentUrl = null;
-      _existingAttachmentName = null;
+      _attachments.removeAt(index);
     });
   }
 
@@ -175,28 +227,58 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
 
     setState(() => _isUploading = true);
 
-    String? finalAttachmentUrl = _existingAttachmentUrl;
-    String? finalAttachmentName = _existingAttachmentName;
+    final storage = widget.storageService ??
+        (widget.userId != null && widget.userId != 'local_user'
+            ? FirebaseStorageService()
+            : MockStorageService());
 
-    // Upload new attachment bytes if a file was selected
-    if (_newAttachmentBytes != null && _newAttachmentName != null) {
-      final storage = widget.storageService ??
-          (widget.userId != null && widget.userId != 'local_user'
-              ? FirebaseStorageService()
-              : MockStorageService());
+    final List<DeliverableAttachment> finalAttachments = [];
 
-      try {
-        finalAttachmentUrl = await storage.uploadDeliverableFile(
-          userId: widget.userId ?? 'local_user',
-          courseId: widget.courseId,
-          fileName: _newAttachmentName!,
-          fileBytes: _newAttachmentBytes!,
+    try {
+      final uploadTasks = _attachments.map((item) async {
+        if (item.existingUrl != null) {
+          return DeliverableAttachment(
+            url: item.existingUrl!,
+            name: item.name,
+            sizeBytes: item.sizeBytes,
+          );
+        } else if (item.bytes != null) {
+          try {
+            final url = await storage.uploadDeliverableFile(
+              userId: widget.userId ?? 'local_user',
+              courseId: widget.courseId,
+              fileName: item.name,
+              fileBytes: item.bytes!,
+            );
+            return DeliverableAttachment(
+              url: url,
+              name: item.name,
+              sizeBytes: item.sizeBytes ?? item.bytes!.lengthInBytes,
+            );
+          } catch (_) {
+            if (item.bytes!.lengthInBytes <= 1024 * 1024) {
+              final mime = FirebaseStorageService.detectContentType(item.name);
+              return DeliverableAttachment(
+                url: 'data:$mime;base64,${base64Encode(item.bytes!)}',
+                name: item.name,
+                sizeBytes: item.bytes!.lengthInBytes,
+              );
+            }
+            rethrow;
+          }
+        }
+        return null;
+      });
+
+      final results = await Future.wait(uploadTasks);
+      for (final res in results) {
+        if (res != null) finalAttachments.add(res);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Note: Some attachments could not be uploaded: $e')),
         );
-        finalAttachmentName = _newAttachmentName;
-      } catch (e) {
-        // Fallback for offline or test environments
-        finalAttachmentUrl = 'https://firebasestorage.googleapis.com/v0/b/student-lms-app.appspot.com/o/mock_${_newAttachmentName!}?alt=media';
-        finalAttachmentName = _newAttachmentName;
       }
     }
 
@@ -214,8 +296,9 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
       dueDate: _selectedDueDate,
       isCompleted: _isCompleted,
       links: links,
-      attachmentUrl: finalAttachmentUrl,
-      attachmentName: finalAttachmentName,
+      attachments: finalAttachments,
+      attachmentUrl: finalAttachments.isNotEmpty ? finalAttachments.first.url : null,
+      attachmentName: finalAttachments.isNotEmpty ? finalAttachments.first.name : null,
       repoUrl: links.isNotEmpty ? links.first : null,
       videoDemoUrl: links.length > 1 ? links[1] : null,
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
@@ -228,11 +311,74 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
     }
   }
 
+  Widget _buildAttachmentThumbnail(_LocalAttachmentItem item) {
+    if (item.isImage) {
+      if (item.bytes != null) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.memory(
+            item.bytes!,
+            width: 44,
+            height: 44,
+            fit: BoxFit.cover,
+          ),
+        );
+      } else if (item.existingUrl != null) {
+        if (item.existingUrl!.startsWith('data:image/')) {
+          try {
+            final commaIndex = item.existingUrl!.indexOf(',');
+            if (commaIndex != -1) {
+              final bytes = base64Decode(item.existingUrl!.substring(commaIndex + 1));
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.memory(bytes, width: 44, height: 44, fit: BoxFit.cover),
+              );
+            }
+          } catch (_) {}
+        }
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            item.existingUrl!,
+            width: 44,
+            height: 44,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const Icon(Icons.image, size: 32, color: Colors.blueAccent),
+          ),
+        );
+      }
+    }
+
+    final lower = item.name.toLowerCase();
+    IconData fileIcon = Icons.insert_drive_file;
+    Color fileColor = Colors.blueAccent;
+    if (lower.endsWith('.pdf')) {
+      fileIcon = Icons.picture_as_pdf;
+      fileColor = Colors.redAccent;
+    } else if (lower.endsWith('.doc') || lower.endsWith('.docx')) {
+      fileIcon = Icons.description;
+      fileColor = Colors.blue.shade700;
+    } else if (lower.endsWith('.zip') || lower.endsWith('.rar')) {
+      fileIcon = Icons.archive;
+      fileColor = Colors.amber.shade800;
+    }
+
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: fileColor.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(fileIcon, size: 24, color: fileColor),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isEditing = widget.deliverableToEdit != null;
-    final hasAttachment = _newAttachmentBytes != null || (_existingAttachmentUrl != null && _existingAttachmentUrl!.isNotEmpty);
     final mediaQuery = MediaQuery.of(context);
     final availableHeight = mediaQuery.size.height - mediaQuery.viewInsets.bottom - 48;
 
@@ -290,309 +436,341 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
                   ),
                   const SizedBox(height: 16),
 
-                // Title Input
-                TextFormField(
-                  controller: _titleController,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: _buildInputDecoration(
-                    label: 'Deliverable Title *',
-                    hint: 'e.g., Software Architecture Milestone',
-                    icon: Icons.title,
-                  ),
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'Please enter a deliverable title' : null,
-                ),
-                const SizedBox(height: 14),
-
-                // Type Category Picker
-                Text(
-                  'Category',
-                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: DeliverableType.values.map((type) {
-                    final isSelected = _selectedType == type;
-                    return ChoiceChip(
-                      label: Text(type.name.toUpperCase()),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        if (selected) setState(() => _selectedType = type);
-                      },
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 14),
-
-                // Target Due Date Picker
-                InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: _pickDueDate,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: (theme.brightness == Brightness.dark
-                          ? Colors.white.withOpacity(0.08)
-                          : Colors.white.withOpacity(0.6)),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: theme.brightness == Brightness.dark
-                            ? Colors.white.withOpacity(0.12)
-                            : Colors.grey.shade300,
-                      ),
+                  // Title Input
+                  TextFormField(
+                    controller: _titleController,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: _buildInputDecoration(
+                      label: 'Deliverable Title *',
+                      hint: 'e.g., Software Architecture Milestone',
+                      icon: Icons.title,
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_today, size: 20, color: Colors.blueAccent),
-                        const SizedBox(width: 12),
-                        Text(
-                          _selectedDueDate == null
-                              ? 'Select Target Due Date'
-                              : 'Due: ${_selectedDueDate!.month}/${_selectedDueDate!.day}/${_selectedDueDate!.year}',
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'Please provide a title for this deliverable.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Type Selection Chips
+                  Text(
+                    'Deliverable Category',
+                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: DeliverableType.values.map((type) {
+                      final isSelected = _selectedType == type;
+                      return ChoiceChip(
+                        label: Text(
+                          type.name[0].toUpperCase() + type.name.substring(1),
                           style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: _selectedDueDate == null
-                                ? Colors.grey
-                                : (theme.brightness == Brightness.dark ? Colors.white : Colors.black87),
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: isSelected ? Colors.white : null,
                           ),
                         ),
-                        const Spacer(),
-                        const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
-                      ],
+                        selected: isSelected,
+                        selectedColor: theme.colorScheme.primary,
+                        onSelected: (selected) {
+                          if (selected) setState(() => _selectedType = type);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Due Date Selector
+                  InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: _pickDueDate,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.shade300,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_today, size: 20, color: Colors.blueAccent),
+                          const SizedBox(width: 12),
+                          Text(
+                            _selectedDueDate == null
+                                ? 'Select Target Due Date'
+                                : 'Due: ${_selectedDueDate!.month}/${_selectedDueDate!.day}/${_selectedDueDate!.year}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: _selectedDueDate == null
+                                  ? Colors.grey
+                                  : (isDark ? Colors.white : Colors.black87),
+                            ),
+                          ),
+                          const Spacer(),
+                          const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 18),
+                  const SizedBox(height: 18),
 
-                // ==========================================
-                // PHOTO / FILE UPLOAD SECTION
-                // ==========================================
-                Text(
-                  'Photo or File Attachment (Optional)',
-                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Upload assignment diagrams, photos of physical work, or documents.',
-                  style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
-                ),
-                const SizedBox(height: 8),
+                  // ==========================================
+                  // MULTI-PHOTO & FILE ATTACHMENTS SECTION
+                  // ==========================================
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Attachments (Photos & Files)',
+                        style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      if (_attachments.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${_attachments.length}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Attach diagrams, lab photos, PDFs, or docs. Multiple files supported.',
+                    style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 8),
 
-                if (hasAttachment)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.blue.withOpacity(0.2)),
-                    ),
-                    child: Row(
-                      children: [
-                        if (_newAttachmentBytes != null &&
-                            (_newAttachmentName?.toLowerCase().endsWith('.png') == true ||
-                                _newAttachmentName?.toLowerCase().endsWith('.jpg') == true ||
-                                _newAttachmentName?.toLowerCase().endsWith('.jpeg') == true))
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.memory(
-                              _newAttachmentBytes!,
-                              width: 48,
-                              height: 48,
-                              fit: BoxFit.cover,
+                  // Existing / Staged Attachments List
+                  if (_attachments.isNotEmpty) ...[
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _attachments.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 6),
+                      itemBuilder: (context, index) {
+                        final item = _attachments[index];
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withOpacity(0.06) : Colors.blue.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark ? Colors.white.withOpacity(0.1) : Colors.blue.withOpacity(0.18),
                             ),
-                          )
-                        else if (_existingAttachmentUrl != null &&
-                            (_existingAttachmentName?.toLowerCase().endsWith('.png') == true ||
-                                _existingAttachmentName?.toLowerCase().endsWith('.jpg') == true ||
-                                _existingAttachmentName?.toLowerCase().endsWith('.jpeg') == true))
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              _existingAttachmentUrl!,
-                              width: 48,
-                              height: 48,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.image, size: 36, color: Colors.blueAccent),
-                            ),
-                          )
-                        else
-                          const Icon(Icons.insert_drive_file, size: 36, color: Colors.blueAccent),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          ),
+                          child: Row(
                             children: [
-                              Text(
-                                _newAttachmentName ?? _existingAttachmentName ?? 'Attached File',
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                                overflow: TextOverflow.ellipsis,
+                              _buildAttachmentThumbnail(item),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.name,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                        color: isDark ? Colors.white : Colors.black87,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${item.formattedSize.isNotEmpty ? "${item.formattedSize} • " : ""}${item.bytes != null ? "Ready to upload" : "Saved in cloud"}',
+                                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              Text(
-                                _newAttachmentBytes != null ? 'Ready to upload on save' : 'Saved in cloud storage',
-                                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+                                tooltip: 'Remove file',
+                                onPressed: () => _removeAttachment(index),
                               ),
                             ],
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
-                          tooltip: 'Remove Attachment',
-                          onPressed: _removeAttachment,
-                        ),
-                      ],
+                        );
+                      },
                     ),
-                  )
-                else
+                    const SizedBox(height: 10),
+                  ],
+
+                  // Add Attachment Buttons
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 11),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          icon: const Icon(Icons.photo_library_outlined, size: 18),
-                          label: const Text('Add Photo', style: TextStyle(fontSize: 13)),
+                          icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
+                          label: Text(
+                            _attachments.isEmpty ? 'Add Photos' : '+ More Photos',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
                           onPressed: _pickPhoto,
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 11),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           icon: const Icon(Icons.attach_file, size: 18),
-                          label: const Text('Add File / PDF', style: TextStyle(fontSize: 13)),
+                          label: Text(
+                            _attachments.isEmpty ? 'Add Files / PDFs' : '+ More Files',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
                           onPressed: _pickDocumentFile,
                         ),
                       ),
                     ],
                   ),
-                const SizedBox(height: 18),
+                  const SizedBox(height: 18),
 
-                // ==========================================
-                // DYNAMIC ARBITRARY LINKS SECTION
-                // ==========================================
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Resource & Submission Links (Optional)',
-                      style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Add as many links as you need (GitHub, Drive, YouTube, Figma, etc.)',
-                      style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-
-                for (int i = 0; i < _linkControllers.length; i++) ...[
-                  Row(
+                  // ==========================================
+                  // DYNAMIC ARBITRARY LINKS SECTION
+                  // ==========================================
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: ValueListenableBuilder<TextEditingValue>(
-                          valueListenable: _linkControllers[i],
-                          builder: (context, value, child) {
-                            return TextFormField(
-                              controller: _linkControllers[i],
-                              keyboardType: TextInputType.url,
-                              decoration: _buildInputDecoration(
-                                label: 'Link ${i + 1}',
-                                hint: 'https://...',
-                                icon: _detectLinkIcon(value.text),
-                              ),
-                            );
-                          },
-                        ),
+                      Text(
+                        'Resource & Submission Links (Optional)',
+                        style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                       ),
-                      if (_linkControllers.length > 1 || _linkControllers[i].text.isNotEmpty)
-                        IconButton(
-                          icon: const Icon(Icons.remove_circle_outline, color: Colors.grey),
-                          tooltip: 'Remove Link',
-                          onPressed: () => _removeLinkField(i),
-                        ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Add as many links as you need (GitHub, Drive, YouTube, Figma, etc.)',
+                        style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                ],
 
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    ),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('+ Add Another Link', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                    onPressed: _addLinkField,
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Notes / Remarks
-                TextFormField(
-                  controller: _notesController,
-                  maxLines: 2,
-                  decoration: _buildInputDecoration(
-                    label: 'Notes / Instructions',
-                    hint: 'Add requirements, notes, or reflection...',
-                    icon: Icons.notes,
-                  ),
-                ),
-
-                if (isEditing) ...[
-                  const SizedBox(height: 14),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Mark as Completed'),
-                    value: _isCompleted,
-                    onChanged: (val) => setState(() => _isCompleted = val),
-                  ),
-                ],
-
-                const SizedBox(height: 24),
-
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 2,
-                    ),
-                    onPressed: _isUploading ? null : _submit,
-                    child: _isUploading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                          )
-                        : Text(
-                            isEditing ? 'Save Changes' : 'Add Deliverable',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  for (int i = 0; i < _linkControllers.length; i++) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ValueListenableBuilder<TextEditingValue>(
+                            valueListenable: _linkControllers[i],
+                            builder: (context, value, child) {
+                              return TextFormField(
+                                controller: _linkControllers[i],
+                                keyboardType: TextInputType.url,
+                                decoration: _buildInputDecoration(
+                                  label: 'Link ${i + 1}',
+                                  hint: 'https://...',
+                                  icon: _detectLinkIcon(value.text),
+                                ),
+                              );
+                            },
                           ),
+                        ),
+                        if (_linkControllers.length > 1 || _linkControllers[i].text.isNotEmpty)
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline, color: Colors.grey),
+                            tooltip: 'Remove Link',
+                            onPressed: () => _removeLinkField(i),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      ),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('+ Add Another Link', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      onPressed: _addLinkField,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 14),
+
+                  // Notes / Remarks
+                  TextFormField(
+                    controller: _notesController,
+                    maxLines: 2,
+                    decoration: _buildInputDecoration(
+                      label: 'Notes / Instructions',
+                      hint: 'Add requirements, notes, or reflection...',
+                      icon: Icons.notes,
+                    ),
+                  ),
+
+                  if (isEditing) ...[
+                    const SizedBox(height: 14),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Mark as Completed'),
+                      value: _isCompleted,
+                      onChanged: (val) => setState(() => _isCompleted = val),
+                    ),
+                  ],
+
+                  const SizedBox(height: 24),
+
+                  // Submit Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 2,
+                      ),
+                      onPressed: _isUploading ? null : _submit,
+                      child: _isUploading
+                          ? const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                ),
+                                SizedBox(width: 10),
+                                Text('Uploading & saving...', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              ],
+                            )
+                          : Text(
+                              isEditing ? 'Save Changes' : 'Add Deliverable',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 
   InputDecoration _buildInputDecoration({
