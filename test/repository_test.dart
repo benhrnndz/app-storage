@@ -162,6 +162,38 @@ void main() {
       expect(retrieved.isAttachmentImage, isTrue);
     });
 
+    test('Deliverable CRUD: preserves multiple attachments and supports data URI fallbacks', () async {
+      final multiAttDeliverable = Deliverable(
+        id: 'test_d_multi_att',
+        courseId: 'c1',
+        title: 'Physics Lab Report with Multiple Attachments',
+        type: DeliverableType.activity,
+        attachments: const [
+          DeliverableAttachment(
+            url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+            name: 'lab_graph.png',
+            sizeBytes: 85,
+          ),
+          DeliverableAttachment(
+            url: 'https://example.com/notes.pdf',
+            name: 'notes.pdf',
+            sizeBytes: 104857,
+          ),
+        ],
+        createdAt: DateTime.now(),
+      );
+
+      await repo.saveDeliverable(testUserId, multiAttDeliverable);
+      final deliverables = await repo.watchDeliverables(testUserId).first;
+      final saved = deliverables.firstWhere((d) => d.id == 'test_d_multi_att');
+
+      expect(saved.allAttachments.length, 2);
+      expect(saved.imageAttachments.length, 1);
+      expect(saved.imageAttachments.first.name, 'lab_graph.png');
+      expect(saved.fileAttachments.length, 1);
+      expect(saved.fileAttachments.first.name, 'notes.pdf');
+    });
+
     test('Schedule Slot CRUD: can add, toggle sync, and delete schedule slot', () async {
       const newSlot = ScheduleSlot(
         id: 'test_s_1',

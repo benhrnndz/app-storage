@@ -205,21 +205,7 @@ class LocalLmsRepository implements LmsRepository {
       _deliverables[index] = deliverable;
     } else {
       final newId = deliverable.id.isEmpty ? 'd_${DateTime.now().millisecondsSinceEpoch}' : deliverable.id;
-      _deliverables.add(Deliverable(
-        id: newId,
-        courseId: deliverable.courseId,
-        title: deliverable.title,
-        type: deliverable.type,
-        dueDate: deliverable.dueDate,
-        isCompleted: deliverable.isCompleted,
-        links: deliverable.links,
-        attachmentUrl: deliverable.attachmentUrl,
-        attachmentName: deliverable.attachmentName,
-        repoUrl: deliverable.repoUrl,
-        videoDemoUrl: deliverable.videoDemoUrl,
-        notes: deliverable.notes,
-        createdAt: deliverable.createdAt,
-      ));
+      _deliverables.add(deliverable.copyWith(id: newId));
     }
     _deliverablesController.add(List.unmodifiable(_deliverables));
   }
