@@ -1,4 +1,5 @@
 // lib/features/courses/widgets/deliverable_tile.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -8,7 +9,7 @@ import '../../../core/widgets/satisfying_checkbox.dart';
 import '../../../models/deliverable.dart';
 
 /// An iOS glassmorphic card displaying a single deliverable (Activity, Project, or Presentation),
-/// with photo/file attachments and dynamic arbitrary links.
+/// with multi-photo/file attachments and dynamic arbitrary links.
 class DeliverableTile extends StatelessWidget {
   final Deliverable deliverable;
   final ValueChanged<bool?> onStatusChanged;
@@ -45,6 +46,18 @@ class DeliverableTile extends StatelessWidget {
     }
   }
 
+  IconData _detectFileIcon(String name) {
+    final lower = name.toLowerCase();
+    if (lower.endsWith('.pdf')) {
+      return Icons.picture_as_pdf;
+    } else if (lower.endsWith('.doc') || lower.endsWith('.docx') || lower.endsWith('.txt')) {
+      return Icons.description;
+    } else if (lower.endsWith('.zip') || lower.endsWith('.rar')) {
+      return Icons.archive;
+    }
+    return Icons.insert_drive_file_outlined;
+  }
+
   Future<void> _handleLinkTap(BuildContext context, String url) async {
     final uri = Uri.tryParse(url);
     if (uri != null && await canLaunchUrl(uri)) {
@@ -60,7 +73,7 @@ class DeliverableTile extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           duration: const Duration(seconds: 2),
-          content: Text('✓ Copied link: $url'),
+          content: Text('✓ Copied: $url'),
         ),
       );
     }
@@ -90,60 +103,134 @@ class DeliverableTile extends StatelessWidget {
     return {'icon': Icons.link, 'label': label, 'color': Colors.indigoAccent};
   }
 
-  void _showImagePreviewDialog(BuildContext context) {
+  Widget _buildImageWidget(
+    String url, {
+    BoxFit fit = BoxFit.cover,
+    double? width,
+    double? height,
+  }) {
+    if (url.startsWith('data:image/')) {
+      try {
+        final commaIndex = url.indexOf(',');
+        if (commaIndex != -1) {
+          final bytes = base64Decode(url.substring(commaIndex + 1));
+          return Image.memory(
+            bytes,
+            fit: fit,
+            width: width,
+            height: height,
+          );
+        }
+      } catch (_) {}
+    }
+    return Image.network(
+      url,
+      fit: fit,
+      width: width,
+      height: height,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return Container(
+          width: width,
+          height: height,
+          alignment: Alignment.center,
+          color: Colors.black.withOpacity(0.04),
+          child: const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        );
+      },
+      errorBuilder: (_, __, ___) => Container(
+        width: width,
+        height: height,
+        color: Colors.grey.withOpacity(0.12),
+        alignment: Alignment.center,
+        child: const Icon(Icons.image_outlined, size: 28, color: Colors.grey),
+      ),
+    );
+  }
+
+  void _showImagePreviewDialog(BuildContext context, {int initialIndex = 0}) {
+    final images = deliverable.imageAttachments;
+    if (images.isEmpty) return;
+
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        child: GlassContainer(
-          borderRadius: 24,
-          blur: 24,
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      deliverable.attachmentName ?? 'Attached Photo',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      overflow: TextOverflow.ellipsis,
+      builder: (context) {
+        int currentIndex = initialIndex;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final currentAttachment = images[currentIndex];
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              child: GlassContainer(
+                borderRadius: 24,
+                blur: 24,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            currentAttachment.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (images.length > 1) ...[
+                          Text(
+                            '${currentIndex + 1} / ${images.length}',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Flexible(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
-                    deliverable.attachmentUrl!,
-                    fit: BoxFit.contain,
-                    loadingBuilder: (context, child, progress) {
-                      if (progress == null) return child;
-                      return const Padding(
-                        padding: EdgeInsets.all(40),
-                        child: CircularProgressIndicator(),
-                      );
-                    },
-                    errorBuilder: (_, __, ___) => const Padding(
-                      padding: EdgeInsets.all(28),
-                      child: Text('Unable to display photo preview.'),
+                    const SizedBox(height: 10),
+                    Flexible(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: _buildImageWidget(currentAttachment.url, fit: BoxFit.contain),
+                      ),
                     ),
-                  ),
+                    if (images.length > 1) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.chevron_left),
+                            onPressed: currentIndex > 0
+                                ? () => setDialogState(() => currentIndex--)
+                                : null,
+                          ),
+                          const SizedBox(width: 16),
+                          IconButton(
+                            icon: const Icon(Icons.chevron_right),
+                            onPressed: currentIndex < images.length - 1
+                                ? () => setDialogState(() => currentIndex++)
+                                : null,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -153,6 +240,8 @@ class DeliverableTile extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final typeColor = _getTypeColor(deliverable.type);
     final allLinks = deliverable.allLinks;
+    final images = deliverable.imageAttachments;
+    final files = deliverable.fileAttachments;
 
     return GlassContainer(
       borderRadius: 18,
@@ -162,36 +251,52 @@ class DeliverableTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row: Type chip & completion checkbox
+          // Top Row: Type Pill + Title + Completed Checkbox
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Type badge (Activity / Project / Presentation)
+              // Category badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: typeColor.withOpacity(0.12),
+                  color: typeColor.withOpacity(isDark ? 0.22 : 0.12),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: typeColor.withOpacity(0.25), width: 1),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(_getTypeIcon(deliverable.type), size: 13, color: typeColor),
+                    Icon(_getTypeIcon(deliverable.type), size: 14, color: typeColor),
                     const SizedBox(width: 4),
                     Text(
                       deliverable.type.name.toUpperCase(),
                       style: TextStyle(
-                        color: typeColor,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
+                        color: typeColor,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Spacer(),
-              // Spring-animated checkbox following Emil Kowalski's physics
+              const SizedBox(width: 8),
+
+              // Title
+              Expanded(
+                child: Text(
+                  deliverable.title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    decoration: deliverable.isCompleted ? TextDecoration.lineThrough : null,
+                    color: deliverable.isCompleted
+                        ? (isDark ? Colors.grey.shade500 : Colors.grey.shade400)
+                        : (isDark ? Colors.white : Colors.black87),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+
+              // Completion checkbox
               SatisfyingCheckbox(
                 value: deliverable.isCompleted,
                 onChanged: onStatusChanged,
@@ -199,24 +304,9 @@ class DeliverableTile extends StatelessWidget {
             ],
           ),
 
-          // Title with smooth strikethrough and opacity transition
-          AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOutCubic,
-            style: theme.textTheme.titleSmall!.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: 14.5,
-              decoration: deliverable.isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
-              color: deliverable.isCompleted
-                  ? (isDark ? Colors.grey.shade500 : Colors.grey.shade400)
-                  : (isDark ? Colors.white : Colors.black87),
-            ),
-            child: Text(deliverable.title),
-          ),
-
-          // Notes if available
+          // Notes / description snippet
           if (deliverable.notes != null && deliverable.notes!.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               deliverable.notes!,
               style: theme.textTheme.bodySmall?.copyWith(
@@ -225,40 +315,27 @@ class DeliverableTile extends StatelessWidget {
             ),
           ],
 
-          // Uploaded Photo / File Attachment Display
-          if (deliverable.attachmentUrl != null && deliverable.attachmentUrl!.isNotEmpty) ...[
+          // Uploaded Photos Display
+          if (images.isNotEmpty) ...[
             const SizedBox(height: 10),
-            if (deliverable.isAttachmentImage)
+            if (images.length == 1)
               GestureDetector(
-                onTap: () => _showImagePreviewDialog(context),
+                onTap: () => _showImagePreviewDialog(context, initialIndex: 0),
                 child: Container(
                   height: 120,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(
+                      color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.shade200,
+                    ),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Image.network(
-                          deliverable.attachmentUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: Colors.grey.shade100,
-                            alignment: Alignment.center,
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.image, size: 20, color: Colors.grey),
-                                SizedBox(width: 6),
-                                Text('Photo attached (tap to view)', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                              ],
-                            ),
-                          ),
-                        ),
+                        _buildImageWidget(images.first.url),
                         Positioned(
                           bottom: 6,
                           right: 6,
@@ -273,7 +350,14 @@ class DeliverableTile extends StatelessWidget {
                               children: [
                                 Icon(Icons.zoom_in, color: Colors.white, size: 13),
                                 SizedBox(width: 4),
-                                Text('Preview', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                                Text(
+                                  'Preview',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -284,30 +368,98 @@ class DeliverableTile extends StatelessWidget {
                 ),
               )
             else
-              // Document / File pill
-              InkWell(
-                borderRadius: BorderRadius.circular(10),
-                onTap: () => _handleLinkTap(context, deliverable.attachmentUrl!),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.06),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.blue.withOpacity(0.18)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.insert_drive_file_outlined, size: 18, color: Colors.blueAccent),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          deliverable.attachmentName ?? 'Attached Document',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueAccent),
-                          overflow: TextOverflow.ellipsis,
+              // Multi-image gallery strip
+              SizedBox(
+                height: 100,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: images.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, idx) {
+                    final img = images[idx];
+                    return GestureDetector(
+                      onTap: () => _showImagePreviewDialog(context, initialIndex: idx),
+                      child: Container(
+                        width: 120,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDark ? Colors.white.withOpacity(0.12) : Colors.grey.shade200,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              _buildImageWidget(img.url),
+                              Positioned(
+                                bottom: 4,
+                                right: 4,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.6),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '${idx + 1}/${images.length}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const Icon(Icons.open_in_new, size: 14, color: Colors.blueAccent),
-                    ],
+                    );
+                  },
+                ),
+              ),
+          ],
+
+          // Uploaded Files / PDFs Display
+          if (files.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            for (final file in files)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () => _handleLinkTap(context, file.url),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withOpacity(0.06) : Colors.blue.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isDark ? Colors.white.withOpacity(0.12) : Colors.blue.withOpacity(0.18),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(_detectFileIcon(file.name), size: 18, color: Colors.blueAccent),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${file.name}${file.formattedSize.isNotEmpty ? " (${file.formattedSize})" : ""}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blueAccent,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const Icon(Icons.open_in_new, size: 14, color: Colors.blueAccent),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -392,4 +544,3 @@ class DeliverableTile extends StatelessWidget {
     );
   }
 }
-
