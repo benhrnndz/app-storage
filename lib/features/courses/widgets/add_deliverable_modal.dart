@@ -34,6 +34,17 @@ class _LocalAttachmentItem {
         lower.endsWith('.bmp');
   }
 
+  bool get isVideo {
+    final lower = name.toLowerCase();
+    if (existingUrl?.startsWith('data:video/') == true) return true;
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.webm') ||
+        lower.endsWith('.mkv') ||
+        lower.endsWith('.avi') ||
+        lower.endsWith('.m4v');
+  }
+
   String get formattedSize {
     final s = sizeBytes ?? bytes?.lengthInBytes;
     if (s == null || s <= 0) return '';
@@ -44,7 +55,7 @@ class _LocalAttachmentItem {
 }
 
 /// Modal bottom sheet allowing students to add or edit coursework deliverables,
-/// with multiple photo/file attachments and an arbitrary number of optional web links.
+/// with multiple photo/video/file attachments and an arbitrary number of optional web links.
 class AddDeliverableModal extends StatefulWidget {
   final String courseId;
   final Deliverable? deliverableToEdit;
@@ -121,9 +132,9 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
     super.dispose();
   }
 
-  void _addLinkField() {
+  void _addLinkField([String text = '']) {
     setState(() {
-      _linkControllers.add(TextEditingController());
+      _linkControllers.add(TextEditingController(text: text));
     });
   }
 
@@ -138,7 +149,7 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
     final lower = url.toLowerCase();
     if (lower.contains('github.com') || lower.contains('gitlab.com')) {
       return Icons.code;
-    } else if (lower.contains('youtube.com') || lower.contains('youtu.be') || lower.contains('loom.com')) {
+    } else if (lower.contains('youtube.com') || lower.contains('youtu.be') || lower.contains('loom.com') || lower.contains('vimeo.com')) {
       return Icons.play_circle_outline;
     } else if (lower.contains('drive.google.com') || lower.contains('docs.google.com')) {
       return Icons.cloud_outlined;
@@ -181,9 +192,14 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
     try {
       final pickedFiles = await FilePicker.pickFiles();
       if (pickedFiles.isNotEmpty) {
+        bool hasVideo = false;
         for (final file in pickedFiles) {
           final bytes = await file.readAsBytes();
           final size = file.lengthSync() ?? bytes.lengthInBytes;
+          final lower = file.name.toLowerCase();
+          if (lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.webm') || lower.endsWith('.mkv')) {
+            hasVideo = true;
+          }
           setState(() {
             _attachments.add(_LocalAttachmentItem(
               name: file.name,
@@ -191,6 +207,15 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
               sizeBytes: size,
             ));
           });
+        }
+
+        if (hasVideo && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              duration: Duration(seconds: 4),
+              content: Text('💡 Tip: For large video demos, you can also paste a YouTube or Google Drive link below.'),
+            ),
+          );
         }
       }
     } catch (e) {
@@ -222,6 +247,82 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
     }
   }
 
+  void _showUploadErrorDialog(BuildContext context, Object error) {
+    final isStorageNotConfigured = error is StorageNotConfiguredException ||
+        error.toString().toLowerCase().contains('cloud storage is not enabled') ||
+        error.toString().toLowerCase().contains('bucket-not-found') ||
+        error.toString().toLowerCase().contains('not found');
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(
+              isStorageNotConfigured ? Icons.cloud_off_rounded : Icons.warning_amber_rounded,
+              color: isStorageNotConfigured ? Colors.amber.shade800 : Colors.redAccent,
+              size: 26,
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Upload Notice',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isStorageNotConfigured
+                  ? 'Firebase Cloud Storage is not yet set up for this project. Large binary files like videos cannot be uploaded to storage directly until it is initialized in the Firebase Console.'
+                  : error.toString(),
+              style: const TextStyle(fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue.withOpacity(0.2)),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.lightbulb_outline, size: 20, color: Colors.blueAccent),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Recommended: Add your video demo via YouTube, Google Drive, or Loom link in the Submission Links section below.',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.blueAccent),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              // Ensure at least one link field is available for the student to paste their video link
+              if (_linkControllers.isEmpty || _linkControllers.every((c) => c.text.isNotEmpty)) {
+                _addLinkField();
+              }
+            },
+            child: const Text('OK, I will add a link', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -243,29 +344,17 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
             sizeBytes: item.sizeBytes,
           );
         } else if (item.bytes != null) {
-          try {
-            final url = await storage.uploadDeliverableFile(
-              userId: widget.userId ?? 'local_user',
-              courseId: widget.courseId,
-              fileName: item.name,
-              fileBytes: item.bytes!,
-            );
-            return DeliverableAttachment(
-              url: url,
-              name: item.name,
-              sizeBytes: item.sizeBytes ?? item.bytes!.lengthInBytes,
-            );
-          } catch (_) {
-            if (item.bytes!.lengthInBytes <= 1024 * 1024) {
-              final mime = FirebaseStorageService.detectContentType(item.name);
-              return DeliverableAttachment(
-                url: 'data:$mime;base64,${base64Encode(item.bytes!)}',
-                name: item.name,
-                sizeBytes: item.bytes!.lengthInBytes,
-              );
-            }
-            rethrow;
-          }
+          final url = await storage.uploadDeliverableFile(
+            userId: widget.userId ?? 'local_user',
+            courseId: widget.courseId,
+            fileName: item.name,
+            fileBytes: item.bytes!,
+          );
+          return DeliverableAttachment(
+            url: url,
+            name: item.name,
+            sizeBytes: item.sizeBytes ?? item.bytes!.lengthInBytes,
+          );
         }
         return null;
       });
@@ -276,10 +365,10 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Note: Some attachments could not be uploaded: $e')),
-        );
+        setState(() => _isUploading = false);
+        _showUploadErrorDialog(context, e);
       }
+      return; // Do NOT pop the modal or discard user inputs! Keep form open!
     }
 
     // Filter out empty link fields
@@ -347,6 +436,18 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
           ),
         );
       }
+    }
+
+    if (item.isVideo) {
+      return Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: Colors.deepPurple.withOpacity(0.14),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Icon(Icons.movie_creation_outlined, size: 24, color: Colors.deepPurpleAccent),
+      );
     }
 
     final lower = item.name.toLowerCase();
@@ -520,13 +621,13 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
                   const SizedBox(height: 18),
 
                   // ==========================================
-                  // MULTI-PHOTO & FILE ATTACHMENTS SECTION
+                  // MULTI-PHOTO, VIDEO & FILE ATTACHMENTS
                   // ==========================================
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Attachments (Photos & Files)',
+                        'Attachments (Photos, Videos & Files)',
                         style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                       ),
                       if (_attachments.isNotEmpty)
@@ -549,7 +650,7 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Attach diagrams, lab photos, PDFs, or docs. Multiple files supported.',
+                    'Attach diagrams, photos, documents, or video files. Multiple files supported.',
                     style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
                   ),
                   const SizedBox(height: 8),
@@ -591,7 +692,7 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '${item.formattedSize.isNotEmpty ? "${item.formattedSize} • " : ""}${item.bytes != null ? "Ready to upload" : "Saved in cloud"}',
+                                      '${item.isVideo ? "Video • " : ""}${item.formattedSize.isNotEmpty ? "${item.formattedSize} • " : ""}${item.bytes != null ? "Ready to upload" : "Saved in cloud"}',
                                       style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                                     ),
                                   ],
@@ -636,7 +737,7 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
                           ),
                           icon: const Icon(Icons.attach_file, size: 18),
                           label: Text(
-                            _attachments.isEmpty ? 'Add Files / PDFs' : '+ More Files',
+                            _attachments.isEmpty ? 'Add Files / Videos' : '+ More Files / Videos',
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                           ),
                           onPressed: _pickDocumentFile,
@@ -658,7 +759,7 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Add as many links as you need (GitHub, Drive, YouTube, Figma, etc.)',
+                        'Add as many links as you need (YouTube, Google Drive, Loom, GitHub, Figma, etc.)',
                         style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
                       ),
                     ],
@@ -703,7 +804,7 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
                       ),
                       icon: const Icon(Icons.add, size: 18),
                       label: const Text('+ Add Another Link', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                      onPressed: _addLinkField,
+                      onPressed: () => _addLinkField(),
                     ),
                   ),
                   const SizedBox(height: 14),
