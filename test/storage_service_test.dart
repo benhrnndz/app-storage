@@ -15,6 +15,17 @@ void main() {
       expect(FirebaseStorageService.detectContentType('essay.docx'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       expect(FirebaseStorageService.detectContentType('archive.zip'), 'application/zip');
       expect(FirebaseStorageService.detectContentType('data.bin'), 'application/octet-stream');
+      expect(FirebaseStorageService.detectContentType('presentation.mp4'), 'video/mp4');
+      expect(FirebaseStorageService.detectContentType('screen_recording.mov'), 'video/quicktime');
+      expect(FirebaseStorageService.detectContentType('demo.webm'), 'video/webm');
+    });
+
+    test('StorageNotConfiguredException formats human-readable message with guidance', () {
+      const ex = StorageNotConfiguredException('walkthrough.mp4', 15728640);
+      expect(ex.formattedSize, '15.0 MB');
+      expect(ex.toString(), contains('walkthrough.mp4'));
+      expect(ex.toString(), contains('15.0 MB'));
+      expect(ex.toString(), contains('YouTube'));
     });
 
     test('MockStorageService returns self-contained data URI for small files', () async {

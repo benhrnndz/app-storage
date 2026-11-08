@@ -1,12 +1,48 @@
 // lib/data/services/storage_service.dart
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+
+/// Thrown when Cloud Storage is unprovisioned on the Firebase project.
+class StorageNotConfiguredException implements Exception {
+  final String fileName;
+  final int byteCount;
+
+  const StorageNotConfiguredException(this.fileName, this.byteCount);
+
+  String get formattedSize {
+    if (byteCount < 1024 * 1024) {
+      return '${(byteCount / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(byteCount / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  @override
+  String toString() {
+    return 'Cloud Storage is not enabled on this Firebase project. Large files like "$fileName" ($formattedSize) cannot be uploaded until Cloud Storage is set up in the Firebase Console.\n\nTip: You can add video links (YouTube, Google Drive, Loom) in the Submission Links section below.';
+  }
+}
+
+/// Thrown when an upload transfer times out.
+class StorageTimeoutException implements Exception {
+  final String fileName;
+  final int byteCount;
+
+  const StorageTimeoutException(this.fileName, this.byteCount);
+
+  @override
+  String toString() {
+    final sizeMb = (byteCount / (1024 * 1024)).toStringAsFixed(1);
+    return 'Upload timed out while uploading "$fileName" ($sizeMb MB). Please check your internet connection or use a video link (YouTube / Google Drive / Loom).';
+  }
+}
 
 /// Abstract interface for file and photo uploads.
 /// Follows Dependency Inversion Principle so presentation logic remains decoupled from Firebase Storage.
 abstract class StorageService {
-  /// Uploads binary file or photo bytes and returns the public download URL or data URI.
+  /// Uploads binary file, photo, or video bytes and returns the public download URL or data URI.
   Future<String> uploadDeliverableFile({
     required String userId,
     required String courseId,
@@ -19,16 +55,22 @@ abstract class StorageService {
 }
 
 /// Production implementation backed by Google Cloud Storage via Firebase Storage,
-/// with fast timeouts and instant base64 data URI fallback if bucket is unprovisioned or network times out.
+/// with dynamic timeouts, automatic MIME type detection, and safe fallback.
 class FirebaseStorageService implements StorageService {
   final FirebaseStorage _storage;
 
   FirebaseStorageService({FirebaseStorage? storage})
-      : _storage = storage ?? FirebaseStorage.instance;
+      : _storage = storage ?? FirebaseStorage.instance {
+    try {
+      _storage.setMaxUploadRetryTime(const Duration(seconds: 8));
+      _storage.setMaxOperationRetryTime(const Duration(seconds: 8));
+    } catch (_) {}
+  }
 
   static String detectContentType(String fileName) {
     final ext = fileName.split('.').last.toLowerCase();
     switch (ext) {
+      // Images
       case 'png':
         return 'image/png';
       case 'jpg':
@@ -40,6 +82,26 @@ class FirebaseStorageService implements StorageService {
         return 'image/gif';
       case 'svg':
         return 'image/svg+xml';
+      case 'heic':
+        return 'image/heic';
+      case 'bmp':
+        return 'image/bmp';
+
+      // Videos
+      case 'mp4':
+        return 'video/mp4';
+      case 'mov':
+        return 'video/quicktime';
+      case 'webm':
+        return 'video/webm';
+      case 'mkv':
+        return 'video/x-matroska';
+      case 'avi':
+        return 'video/x-msvideo';
+      case 'm4v':
+        return 'video/x-m4v';
+
+      // Documents & Archives
       case 'pdf':
         return 'application/pdf';
       case 'doc':
@@ -48,6 +110,9 @@ class FirebaseStorageService implements StorageService {
         return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
       case 'zip':
         return 'application/zip';
+      case 'tar':
+      case 'gz':
+        return 'application/gzip';
       default:
         return 'application/octet-stream';
     }
@@ -66,18 +131,43 @@ class FirebaseStorageService implements StorageService {
     final ref = _storage.ref().child(path);
     final contentType = detectContentType(fileName);
 
+    // Dynamic timeout: 6 seconds for small files, up to 300s for large video files
+    final int timeoutSeconds = fileBytes.lengthInBytes <= 1024 * 1024
+        ? 6
+        : (fileBytes.lengthInBytes / (256 * 1024)).ceil().clamp(30, 300);
+
     try {
       final uploadTask = await ref
           .putData(fileBytes, SettableMetadata(contentType: contentType))
-          .timeout(const Duration(seconds: 4));
-      return await uploadTask.ref.getDownloadURL().timeout(const Duration(seconds: 3));
-    } catch (_) {
-      // If Cloud Storage is unprovisioned (404), offline, or times out,
-      // fallback to self-contained data URI for fast persistence (up to 1MB).
+          .timeout(Duration(seconds: timeoutSeconds));
+      return await uploadTask.ref.getDownloadURL().timeout(const Duration(seconds: 10));
+    } on TimeoutException {
+      // If file is small, fallback immediately to self-contained data URI
       if (fileBytes.lengthInBytes <= 1024 * 1024) {
         return 'data:$contentType;base64,${base64Encode(fileBytes)}';
       }
-      rethrow;
+      // If large file timed out on unprovisioned storage or slow connection, provide a clean exception
+      throw StorageNotConfiguredException(fileName, fileBytes.lengthInBytes);
+    } on FirebaseException catch (fe) {
+      if (fileBytes.lengthInBytes <= 1024 * 1024) {
+        return 'data:$contentType;base64,${base64Encode(fileBytes)}';
+      }
+      if (fe.code == 'object-not-found' ||
+          fe.code == 'bucket-not-found' ||
+          fe.code == 'project-not-found' ||
+          (fe.message?.contains('404') == true)) {
+        throw StorageNotConfiguredException(fileName, fileBytes.lengthInBytes);
+      }
+      throw Exception('Upload failed for "$fileName": ${fe.message ?? fe.code}');
+    } catch (e) {
+      if (fileBytes.lengthInBytes <= 1024 * 1024) {
+        return 'data:$contentType;base64,${base64Encode(fileBytes)}';
+      }
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('not found') || msg.contains('404') || msg.contains('bucket')) {
+        throw StorageNotConfiguredException(fileName, fileBytes.lengthInBytes);
+      }
+      throw Exception('Upload failed for "$fileName": $e');
     }
   }
 
