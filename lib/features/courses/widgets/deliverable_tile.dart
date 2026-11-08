@@ -52,8 +52,10 @@ class DeliverableTile extends StatelessWidget {
       return Icons.picture_as_pdf;
     } else if (lower.endsWith('.doc') || lower.endsWith('.docx') || lower.endsWith('.txt')) {
       return Icons.description;
-    } else if (lower.endsWith('.zip') || lower.endsWith('.rar')) {
+    } else if (lower.endsWith('.zip') || lower.endsWith('.rar') || lower.endsWith('.tar') || lower.endsWith('.gz')) {
       return Icons.archive;
+    } else if (lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.webm') || lower.endsWith('.mkv')) {
+      return Icons.movie_outlined;
     }
     return Icons.insert_drive_file_outlined;
   }
@@ -241,7 +243,8 @@ class DeliverableTile extends StatelessWidget {
     final typeColor = _getTypeColor(deliverable.type);
     final allLinks = deliverable.allLinks;
     final images = deliverable.imageAttachments;
-    final files = deliverable.fileAttachments;
+    final videos = deliverable.videoAttachments;
+    final documents = deliverable.documentAttachments;
 
     return GlassContainer(
       borderRadius: 18,
@@ -424,10 +427,72 @@ class DeliverableTile extends StatelessWidget {
               ),
           ],
 
-          // Uploaded Files / PDFs Display
-          if (files.isNotEmpty) ...[
+          // Uploaded Videos Display
+          if (videos.isNotEmpty) ...[
             const SizedBox(height: 8),
-            for (final file in files)
+            for (final video in videos)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () => _handleLinkTap(context, video.url),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.purple.withOpacity(0.14) : Colors.purple.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isDark ? Colors.purpleAccent.withOpacity(0.3) : Colors.purple.withOpacity(0.25),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.play_circle_fill, size: 20, color: Colors.purpleAccent),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${video.name}${video.formattedSize.isNotEmpty ? " (${video.formattedSize})" : ""}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.purple.shade200 : Colors.purple.shade900,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.purpleAccent.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.open_in_new, size: 12, color: Colors.purpleAccent),
+                              SizedBox(width: 4),
+                              Text(
+                                'Watch Video',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.purpleAccent,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+
+          // Uploaded Documents / Files Display
+          if (documents.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            for (final file in documents)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: InkWell(

@@ -55,5 +55,39 @@ void main() {
       expect(find.textContaining('arch_spec.pdf'), findsOneWidget);
       expect(find.byIcon(Icons.picture_as_pdf), findsOneWidget);
     });
+
+    testWidgets('Renders video attachments with Watch Video button and play icon', (tester) async {
+      final deliverable = Deliverable(
+        id: 'd_test_video',
+        courseId: 'c1',
+        title: 'Project Demo Presentation',
+        type: DeliverableType.presentation,
+        attachments: const [
+          DeliverableAttachment(
+            url: 'https://example.com/demo.mp4',
+            name: 'demo.mp4',
+            sizeBytes: 15728640,
+          ),
+        ],
+        createdAt: DateTime.now(),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: DeliverableTile(
+              deliverable: deliverable,
+              onStatusChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Project Demo Presentation'), findsOneWidget);
+      expect(find.textContaining('demo.mp4'), findsOneWidget);
+      expect(find.text('Watch Video'), findsOneWidget);
+      expect(find.byIcon(Icons.play_circle_fill), findsOneWidget);
+    });
   });
 }
