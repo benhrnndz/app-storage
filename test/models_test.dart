@@ -133,6 +133,37 @@ void main() {
       expect(restored.fileAttachments.length, 1);
       expect(restored.fileAttachments.first.name, 'spec.pdf');
     });
+
+    test('Deliverable supports video attachments and categorizes them accurately', () {
+      const videoAtt = DeliverableAttachment(
+        url: 'https://example.com/demo.mp4',
+        name: 'presentation_walkthrough.mp4',
+        sizeBytes: 15728640, // 15 MB
+      );
+      const pdfAtt = DeliverableAttachment(
+        url: 'https://example.com/slides.pdf',
+        name: 'slides.pdf',
+        sizeBytes: 1048576, // 1 MB
+      );
+
+      expect(videoAtt.isVideo, isTrue);
+      expect(videoAtt.isImage, isFalse);
+      expect(videoAtt.formattedSize, '15.0 MB');
+
+      final deliverable = Deliverable(
+        id: 'd_video',
+        courseId: 'c1',
+        title: 'Final Presentation with Video',
+        type: DeliverableType.presentation,
+        attachments: const [videoAtt, pdfAtt],
+        createdAt: DateTime.now(),
+      );
+
+      expect(deliverable.videoAttachments.length, 1);
+      expect(deliverable.videoAttachments.first.name, 'presentation_walkthrough.mp4');
+      expect(deliverable.documentAttachments.length, 1);
+      expect(deliverable.documentAttachments.first.name, 'slides.pdf');
+    });
   });
 
   group('ScheduleSlot Model Tests', () {

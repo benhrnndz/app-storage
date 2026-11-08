@@ -37,6 +37,18 @@ class DeliverableAttachment {
         lower.endsWith('.bmp');
   }
 
+  /// Whether the attachment is a video based on its extension or data URI scheme.
+  bool get isVideo {
+    final lower = name.toLowerCase();
+    if (url.startsWith('data:video/')) return true;
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.webm') ||
+        lower.endsWith('.mkv') ||
+        lower.endsWith('.avi') ||
+        lower.endsWith('.m4v');
+  }
+
   /// Human-readable file size (e.g., "120 KB", "1.4 MB").
   String get formattedSize {
     if (sizeBytes == null || sizeBytes! <= 0) return '';
@@ -172,7 +184,17 @@ class Deliverable {
     return allAttachments.where((a) => a.isImage).toList();
   }
 
-  /// All non-image file attachments (e.g. PDFs, documents, archives).
+  /// All video attachments (e.g. MP4, MOV, WebM recordings).
+  List<DeliverableAttachment> get videoAttachments {
+    return allAttachments.where((a) => a.isVideo).toList();
+  }
+
+  /// All non-image, non-video document attachments (e.g. PDFs, docs, spreadsheets).
+  List<DeliverableAttachment> get documentAttachments {
+    return allAttachments.where((a) => !a.isImage && !a.isVideo).toList();
+  }
+
+  /// All non-image file attachments (e.g. PDFs, documents, archives, videos).
   List<DeliverableAttachment> get fileAttachments {
     return allAttachments.where((a) => !a.isImage).toList();
   }
