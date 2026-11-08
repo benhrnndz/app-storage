@@ -55,3 +55,4 @@ macos/Runner/GoogleService-Info.plist
 firebase.json
 .firebase/
 *.env
+storage.rules
