@@ -335,40 +335,52 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
 
     final List<DeliverableAttachment> finalAttachments = [];
 
-    try {
-      final uploadTasks = _attachments.map((item) async {
-        if (item.existingUrl != null) {
-          return DeliverableAttachment(
-            url: item.existingUrl!,
-            name: item.name,
-            sizeBytes: item.sizeBytes,
-          );
-        } else if (item.bytes != null) {
+    // Upload each attachment individually so one failure doesn't block the rest.
+    final List<String> uploadErrors = [];
+
+    for (final item in _attachments) {
+      if (item.existingUrl != null) {
+        finalAttachments.add(DeliverableAttachment(
+          url: item.existingUrl!,
+          name: item.name,
+          sizeBytes: item.sizeBytes,
+        ));
+      } else if (item.bytes != null) {
+        try {
           final url = await storage.uploadDeliverableFile(
             userId: widget.userId ?? 'local_user',
             courseId: widget.courseId,
             fileName: item.name,
             fileBytes: item.bytes!,
           );
-          return DeliverableAttachment(
+          finalAttachments.add(DeliverableAttachment(
             url: url,
             name: item.name,
             sizeBytes: item.sizeBytes ?? item.bytes!.lengthInBytes,
-          );
+          ));
+        } on StorageNotConfiguredException catch (e) {
+          // Storage not provisioned — show dialog and abort remaining uploads
+          if (mounted) {
+            setState(() => _isUploading = false);
+            _showUploadErrorDialog(context, e);
+          }
+          return;
+        } catch (e) {
+          uploadErrors.add(item.name);
         }
-        return null;
-      });
+      }
+    }
 
-      final results = await Future.wait(uploadTasks);
-      for (final res in results) {
-        if (res != null) finalAttachments.add(res);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isUploading = false);
-        _showUploadErrorDialog(context, e);
-      }
-      return; // Do NOT pop the modal or discard user inputs! Keep form open!
+    // If some (but not all) files failed, show a note but still save the deliverable
+    if (uploadErrors.isNotEmpty && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 4),
+          content: Text(
+            'Note: ${uploadErrors.length} file(s) could not be uploaded: ${uploadErrors.join(", ")}. The deliverable was saved with the remaining attachments.',
+          ),
+        ),
+      );
     }
 
     // Filter out empty link fields
