@@ -62,8 +62,8 @@ class FirebaseStorageService implements StorageService {
   FirebaseStorageService({FirebaseStorage? storage})
       : _storage = storage ?? FirebaseStorage.instance {
     try {
-      _storage.setMaxUploadRetryTime(const Duration(seconds: 8));
-      _storage.setMaxOperationRetryTime(const Duration(seconds: 8));
+      _storage.setMaxUploadRetryTime(const Duration(seconds: 20));
+      _storage.setMaxOperationRetryTime(const Duration(seconds: 15));
     } catch (_) {}
   }
 
@@ -118,6 +118,10 @@ class FirebaseStorageService implements StorageService {
     }
   }
 
+  /// Maximum file size (5 MB) that will be stored inline as a data URI
+  /// when Cloud Storage upload fails or is unavailable.
+  static const int _dataUriFallbackLimit = 5 * 1024 * 1024;
+
   @override
   Future<String> uploadDeliverableFile({
     required String userId,
@@ -131,25 +135,26 @@ class FirebaseStorageService implements StorageService {
     final ref = _storage.ref().child(path);
     final contentType = detectContentType(fileName);
 
-    // Dynamic timeout: 6 seconds for small files, up to 300s for large video files
+    // Dynamic timeout: 15s base for small files, scales up for large files (max 300s)
     final int timeoutSeconds = fileBytes.lengthInBytes <= 1024 * 1024
-        ? 6
-        : (fileBytes.lengthInBytes / (256 * 1024)).ceil().clamp(30, 300);
+        ? 15
+        : (fileBytes.lengthInBytes / (128 * 1024)).ceil().clamp(30, 300);
 
     try {
-      final uploadTask = await ref
+      // putData() returns an UploadTask (extends Future<TaskSnapshot>).
+      // We await the task snapshot first, then get the download URL.
+      final snapshot = await ref
           .putData(fileBytes, SettableMetadata(contentType: contentType))
           .timeout(Duration(seconds: timeoutSeconds));
-      return await uploadTask.ref.getDownloadURL().timeout(const Duration(seconds: 10));
+      return await snapshot.ref.getDownloadURL().timeout(const Duration(seconds: 15));
     } on TimeoutException {
-      // If file is small, fallback immediately to self-contained data URI
-      if (fileBytes.lengthInBytes <= 1024 * 1024) {
+      // Fallback to data URI for files within limit
+      if (fileBytes.lengthInBytes <= _dataUriFallbackLimit) {
         return 'data:$contentType;base64,${base64Encode(fileBytes)}';
       }
-      // If large file timed out on unprovisioned storage or slow connection, provide a clean exception
       throw StorageNotConfiguredException(fileName, fileBytes.lengthInBytes);
     } on FirebaseException catch (fe) {
-      if (fileBytes.lengthInBytes <= 1024 * 1024) {
+      if (fileBytes.lengthInBytes <= _dataUriFallbackLimit) {
         return 'data:$contentType;base64,${base64Encode(fileBytes)}';
       }
       if (fe.code == 'object-not-found' ||
@@ -160,7 +165,7 @@ class FirebaseStorageService implements StorageService {
       }
       throw Exception('Upload failed for "$fileName": ${fe.message ?? fe.code}');
     } catch (e) {
-      if (fileBytes.lengthInBytes <= 1024 * 1024) {
+      if (fileBytes.lengthInBytes <= _dataUriFallbackLimit) {
         return 'data:$contentType;base64,${base64Encode(fileBytes)}';
       }
       final msg = e.toString().toLowerCase();
