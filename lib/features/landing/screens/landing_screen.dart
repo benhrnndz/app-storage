@@ -498,7 +498,7 @@ class _LandingScreenState extends State<LandingScreen> {
                     Icon(
                       Icons.open_in_new_rounded,
                       size: 15,
-                      color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                      color: primaryAccent,
                     ),
                   ],
                 ),
@@ -518,7 +518,7 @@ class _LandingScreenState extends State<LandingScreen> {
             Icon(
               Icons.shield_outlined,
               size: 14,
-              color: primaryAccent.withOpacity(0.85),
+              color: primaryAccent,
             ),
             Text(
               'OAuth 2.0 Encrypted • Real-Time Firestore • SIA Coursework',
@@ -562,11 +562,11 @@ class _LandingScreenState extends State<LandingScreen> {
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: const Color(0xFF0A1211),
-                        child: const Center(
+                        child: Center(
                           child: Icon(
                             Icons.laptop_chromebook_rounded,
                             size: 64,
-                            color: Colors.teal,
+                            color: primaryAccent,
                           ),
                         ),
                       ),
@@ -772,7 +772,7 @@ class _LandingScreenState extends State<LandingScreen> {
                       description:
                           'Organize course codes, instructors, room venues, and syllabus policies in unified, accessible modules.',
                       tag: 'Syllabus Engine',
-                      accentColor: const Color(0xFF0F766E),
+                      accentColor: primaryAccent,
                       theme: theme,
                       isDark: isDark,
                       height: 220,
@@ -784,7 +784,7 @@ class _LandingScreenState extends State<LandingScreen> {
                       description:
                           'Track assignments, midterms, and finals with automated percentage weight calculations and deadline countdowns.',
                       tag: 'Academic Portfolio',
-                      accentColor: const Color(0xFF06B6D4),
+                      accentColor: primaryAccent,
                       theme: theme,
                       isDark: isDark,
                       height: 220,
@@ -802,7 +802,7 @@ class _LandingScreenState extends State<LandingScreen> {
                       description:
                           'Interactive visual timetable with real-time conflict detection and 1-click RFC-compliant iCal (.ics) export to Google & Apple Calendar.',
                       tag: 'Schedule Integration',
-                      accentColor: const Color(0xFF10B981),
+                      accentColor: primaryAccent,
                       theme: theme,
                       isDark: isDark,
                       height: 220,
@@ -814,7 +814,7 @@ class _LandingScreenState extends State<LandingScreen> {
                       description:
                           'Intelligent study assistant that breaks down large coursework projects into prioritized daily sprint recommendations.',
                       tag: 'Contextual AI',
-                      accentColor: const Color(0xFFF59E0B),
+                      accentColor: primaryAccent,
                       theme: theme,
                       isDark: isDark,
                       height: 220,
@@ -833,7 +833,7 @@ class _LandingScreenState extends State<LandingScreen> {
                 description:
                     'Organize course codes, instructors, room venues, and syllabus policies in unified, accessible modules.',
                 tag: 'Syllabus Engine',
-                accentColor: const Color(0xFF0F766E),
+                accentColor: primaryAccent,
                 theme: theme,
                 isDark: isDark,
               ),
@@ -844,7 +844,7 @@ class _LandingScreenState extends State<LandingScreen> {
                 description:
                     'Interactive visual timetable with real-time conflict detection and 1-click RFC-compliant iCal export to Google & Apple Calendar.',
                 tag: 'Schedule Integration',
-                accentColor: const Color(0xFF10B981),
+                accentColor: primaryAccent,
                 theme: theme,
                 isDark: isDark,
               ),
@@ -855,7 +855,7 @@ class _LandingScreenState extends State<LandingScreen> {
                 description:
                     'Track assignments, midterms, and finals with automated percentage weight calculations and deadline countdowns.',
                 tag: 'Academic Portfolio',
-                accentColor: const Color(0xFF06B6D4),
+                accentColor: primaryAccent,
                 theme: theme,
                 isDark: isDark,
               ),
@@ -866,7 +866,7 @@ class _LandingScreenState extends State<LandingScreen> {
                 description:
                     'Intelligent study assistant that breaks down large coursework projects into prioritized daily sprint recommendations.',
                 tag: 'Contextual AI',
-                accentColor: const Color(0xFFF59E0B),
+                accentColor: primaryAccent,
                 theme: theme,
                 isDark: isDark,
               ),
