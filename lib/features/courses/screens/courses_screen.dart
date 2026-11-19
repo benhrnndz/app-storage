@@ -23,12 +23,14 @@ class CoursesScreen extends StatefulWidget {
   final AuthService? authService;
   final AuthUser? currentUser;
   final LmsRepository? repository;
+  final bool showBackground;
 
   const CoursesScreen({
     super.key,
     this.authService,
     this.currentUser,
     this.repository,
+    this.showBackground = true,
   });
 
   @override
@@ -451,7 +453,23 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
             final activeCourses = courses.where((c) => !c.isArchived).toList();
             final archivedCourses = courses.where((c) => c.isArchived).toList();
 
+            final bodyContent = isLoading
+                ? Center(
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildCourseList(activeCourses, allDeliverables, isArchived: false),
+                      _buildCourseList(archivedCourses, allDeliverables, isArchived: true),
+                    ],
+                  );
+
             return Scaffold(
+              backgroundColor: widget.showBackground ? null : Colors.transparent,
               appBar: FrostedAppBar(
                 title: const Text(
                   'Syllo — Academic Hub',
@@ -563,22 +581,9 @@ class _CoursesScreenState extends State<CoursesScreen> with SingleTickerProvider
                   ),
                 ),
               ),
-              body: AmbientMeshBackground(
-                child: isLoading
-                    ? Center(
-                        child: CircularProgressIndicator(
-                          color: Theme.of(context).colorScheme.primary,
-                          strokeWidth: 2.5,
-                        ),
-                      )
-                    : TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildCourseList(activeCourses, allDeliverables, isArchived: false),
-                          _buildCourseList(archivedCourses, allDeliverables, isArchived: true),
-                        ],
-                      ),
-              ),
+              body: widget.showBackground
+                  ? AmbientMeshBackground(child: bodyContent)
+                  : bodyContent,
             );
           },
         );
