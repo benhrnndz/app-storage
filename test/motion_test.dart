@@ -92,6 +92,42 @@ void main() {
       expect(find.text('Foreground Content'), findsOneWidget);
       expect(find.byType(Stack), findsWidgets);
     });
+
+    testWidgets('AmbientMeshBackground smoothly glides bubbles when sceneIndex changes', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AmbientMeshBackground(
+              sceneIndex: 0,
+              child: Text('Tab 0'),
+            ),
+          ),
+        ),
+      );
+
+      final initialPos = tester.widget<AnimatedPositioned>(find.byType(AnimatedPositioned).first).left;
+
+      // Switch to sceneIndex 1
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AmbientMeshBackground(
+              sceneIndex: 1,
+              child: Text('Tab 1'),
+            ),
+          ),
+        ),
+      );
+
+      // Mid-animation frame
+      await tester.pump(const Duration(milliseconds: 200));
+      final targetPos = tester.widget<AnimatedPositioned>(find.byType(AnimatedPositioned).first).left;
+      expect(targetPos, isNot(equals(initialPos)));
+
+      // Settle animation cleanly
+      await tester.pumpAndSettle();
+      expect(find.text('Tab 1'), findsOneWidget);
+    });
   });
 }
 
