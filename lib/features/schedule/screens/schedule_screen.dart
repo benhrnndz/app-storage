@@ -24,8 +24,14 @@ import '../widgets/schedule_settings_modal.dart';
 class ScheduleScreen extends StatefulWidget {
   final LmsRepository? repository;
   final String? userId;
+  final bool showBackground;
 
-  const ScheduleScreen({super.key, this.repository, this.userId});
+  const ScheduleScreen({
+    super.key,
+    this.repository,
+    this.userId,
+    this.showBackground = true,
+  });
 
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
@@ -360,7 +366,40 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     ? const <ScheduleSlot>[]
                     : mockSchedules);
 
+            final bodyContent = isLoading
+                ? Center(
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : Column(
+                    children: [
+                      // View Switcher: "Calendar Agenda" vs "Timetable Settings"
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: _buildViewSwitcher(
+                          Theme.of(context).brightness == Brightness.dark,
+                          Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+
+                      const Divider(height: 1),
+
+                      // Main View Content
+                      Expanded(
+                        child: _viewMode == 0
+                            ? _buildCalendarAgendaView(slots, courses)
+                            : _buildTimetableSetupView(slots, courses),
+                      ),
+                    ],
+                  );
+
             return Scaffold(
+              backgroundColor: widget.showBackground ? null : Colors.transparent,
               appBar: FrostedAppBar(
                 title: const Text(
                   'Class Schedule & Calendar',
@@ -386,39 +425,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   const SizedBox(width: 8),
                 ],
               ),
-              body: AmbientMeshBackground(
-                child: isLoading
-                    ? Center(
-                        child: CircularProgressIndicator(
-                          color: Theme.of(context).colorScheme.primary,
-                          strokeWidth: 2.5,
-                        ),
-                      )
-                    : Column(
-                        children: [
-                          // View Switcher: "Calendar Agenda" vs "Timetable Settings"
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            child: _buildViewSwitcher(
-                              Theme.of(context).brightness == Brightness.dark,
-                              Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-
-                          const Divider(height: 1),
-
-                          // Main View Content
-                          Expanded(
-                            child: _viewMode == 0
-                                ? _buildCalendarAgendaView(slots, courses)
-                                : _buildTimetableSetupView(slots, courses),
-                          ),
-                        ],
-                      ),
-              ),
+              body: widget.showBackground
+                  ? AmbientMeshBackground(child: bodyContent)
+                  : bodyContent,
             );
           },
         );
