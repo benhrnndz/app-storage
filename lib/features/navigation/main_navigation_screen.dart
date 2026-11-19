@@ -1,5 +1,6 @@
 // lib/features/navigation/main_navigation_screen.dart
 import 'package:flutter/material.dart';
+import '../../core/widgets/ambient_background.dart';
 import '../../core/widgets/bouncy_tap.dart';
 import '../../core/widgets/glass_card.dart';
 import '../../data/repositories/lms_repository.dart';
@@ -52,15 +53,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             authService: widget.authService,
             currentUser: widget.currentUser,
             repository: widget.repository,
+            showBackground: false,
           ),
           ScheduleScreen(
             repository: widget.repository,
             userId: widget.currentUser?.uid,
+            showBackground: false,
           ),
           if (isAiEnabled)
             AiAssistantScreen(
               repository: widget.repository,
               userId: widget.currentUser?.uid,
+              showBackground: false,
             ),
         ];
 
@@ -69,55 +73,59 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           _currentIndex = 0;
         }
 
-        return Scaffold(
-          // extendBody allows scrollable content to flow behind the glass navigation bar
-          extendBody: true,
-          body: IndexedStack(
-            index: _currentIndex,
-            children: screens,
-          ),
-          bottomNavigationBar: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              child: Center(
-                heightFactor: 1.0,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 440),
-                  child: GlassContainer(
-                    borderRadius: 32,
-                    blur: 24,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _buildNavItem(
-                            index: 0,
-                            icon: Icons.school_outlined,
-                            activeIcon: Icons.school_rounded,
-                            label: 'Courses',
+        return AmbientMeshBackground(
+          sceneIndex: _currentIndex,
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            // extendBody allows scrollable content to flow behind the glass navigation bar
+            extendBody: true,
+            body: IndexedStack(
+              index: _currentIndex,
+              children: screens,
+            ),
+            bottomNavigationBar: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                child: Center(
+                  heightFactor: 1.0,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    child: GlassContainer(
+                      borderRadius: 32,
+                      blur: 24,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildNavItem(
+                              index: 0,
+                              icon: Icons.school_outlined,
+                              activeIcon: Icons.school_rounded,
+                              label: 'Courses',
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: _buildNavItem(
-                            index: 1,
-                            icon: Icons.calendar_month_outlined,
-                            activeIcon: Icons.calendar_month_rounded,
-                            label: 'Schedule',
-                          ),
-                        ),
-                        if (isAiEnabled) ...[
                           const SizedBox(width: 6),
                           Expanded(
                             child: _buildNavItem(
-                              index: 2,
-                              icon: Icons.auto_awesome_outlined,
-                              activeIcon: Icons.auto_awesome_rounded,
-                              label: 'AI Coach',
+                              index: 1,
+                              icon: Icons.calendar_month_outlined,
+                              activeIcon: Icons.calendar_month_rounded,
+                              label: 'Schedule',
                             ),
                           ),
+                          if (isAiEnabled) ...[
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: _buildNavItem(
+                                index: 2,
+                                icon: Icons.auto_awesome_outlined,
+                                activeIcon: Icons.auto_awesome_rounded,
+                                label: 'AI Coach',
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
