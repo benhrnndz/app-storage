@@ -22,12 +22,14 @@ class AiAssistantScreen extends StatefulWidget {
   final LmsRepository? repository;
   final String? userId;
   final AiAssistantService? aiService;
+  final bool showBackground;
 
   const AiAssistantScreen({
     super.key,
     this.repository,
     this.userId,
     this.aiService,
+    this.showBackground = true,
   });
 
   @override
@@ -186,6 +188,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 final schedules = scheduleSnapshot.data ?? (widget.repository != null ? const <ScheduleSlot>[] : mockSchedules);
 
                 return Scaffold(
+                  backgroundColor: widget.showBackground ? null : Colors.transparent,
                   appBar: FrostedAppBar(
                     title: const Row(
                       children: [
@@ -224,87 +227,92 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                       const SizedBox(width: 8),
                     ],
                   ),
-                  body: AmbientMeshBackground(
-                    child: Column(
-                      children: [
-                        // Quick Action Chips Header
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: Row(
-                            children: _quickPrompts.map((prompt) {
-                              final isDark = theme.brightness == Brightness.dark;
-                              final accentColor = isDark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary;
+                  body: Builder(
+                    builder: (context) {
+                      final content = Column(
+                        children: [
+                          // Quick Action Chips Header
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: Row(
+                              children: _quickPrompts.map((prompt) {
+                                final isDark = theme.brightness == Brightness.dark;
+                                final accentColor = isDark ? const Color(0xFF2DD4BF) : theme.colorScheme.primary;
 
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: BouncyTap(
-                                  scaleDown: 0.95,
-                                  onTap: () => _handleSubmitted(prompt, courses, deliverables, schedules),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                                    decoration: BoxDecoration(
-                                      color: (isDark ? const Color(0xFF111E1D) : Colors.white).withOpacity(0.82),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: accentColor.withOpacity(isDark ? 0.35 : 0.22),
-                                        width: 1.0,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: BouncyTap(
+                                    scaleDown: 0.95,
+                                    onTap: () => _handleSubmitted(prompt, courses, deliverables, schedules),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                      decoration: BoxDecoration(
+                                        color: (isDark ? const Color(0xFF111E1D) : Colors.white).withOpacity(0.82),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: accentColor.withOpacity(isDark ? 0.35 : 0.22),
+                                          width: 1.0,
                                         ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.auto_awesome_rounded, size: 13, color: accentColor),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          prompt,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: isDark ? Colors.grey.shade200 : Colors.grey.shade800,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.auto_awesome_rounded, size: 13, color: accentColor),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            prompt,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: isDark ? Colors.grey.shade200 : Colors.grey.shade800,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              );
-                            }).toList(),
+                                );
+                              }).toList(),
+                            ),
                           ),
-                        ),
 
-                        const Divider(height: 1),
+                          const Divider(height: 1),
 
-                        // Message Feed
-                        Expanded(
-                          child: ListView.builder(
-                            controller: _scrollController,
-                            padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 90),
-                            itemCount: _messages.length + (_isLoading ? 1 : 0),
-                            itemBuilder: (context, index) {
-                              if (index == _messages.length) {
-                                return _buildLoadingIndicator();
-                              }
-                              final msg = _messages[index];
-                              return StaggeredEntrance(
-                                index: index,
-                                child: _buildMessageBubble(msg, theme),
-                              );
-                            },
+                          // Message Feed
+                          Expanded(
+                            child: ListView.builder(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 90),
+                              itemCount: _messages.length + (_isLoading ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index == _messages.length) {
+                                  return _buildLoadingIndicator();
+                                }
+                                final msg = _messages[index];
+                                return StaggeredEntrance(
+                                  index: index,
+                                  child: _buildMessageBubble(msg, theme),
+                                );
+                              },
+                            ),
                           ),
-                        ),
 
-                        // Bottom Input Bar
-                        _buildInputBar(theme, courses, deliverables, schedules),
-                      ],
-                    ),
+                          // Bottom Input Bar
+                          _buildInputBar(theme, courses, deliverables, schedules),
+                        ],
+                      );
+                      return widget.showBackground
+                          ? AmbientMeshBackground(child: content)
+                          : content;
+                    },
                   ),
                 );
               },
