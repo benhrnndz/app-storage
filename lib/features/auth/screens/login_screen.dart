@@ -118,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Icon(
                             Icons.arrow_back_rounded,
                             size: 15,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E),
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -254,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Icon(
                         Icons.school_rounded,
                         size: 64,
-                        color: theme.colorScheme.primary,
+                        color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E),
                       ),
                     ),
                   ),
@@ -511,6 +511,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildFeatureCard(ThemeData theme, bool isDark) {
+    final primaryAccent = isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E);
+
     return GlassContainer(
       borderRadius: 22,
       blur: 18,
@@ -520,7 +522,7 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           _buildFeatureRow(
             icon: Icons.calendar_month_outlined,
-            color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E),
+            color: primaryAccent,
             title: 'Class Timetable & Calendar Sync',
             subtitle: 'Export RFC 5545 schedules to Google, Apple & Outlook',
             isDark: isDark,
@@ -534,7 +536,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           _buildFeatureRow(
             icon: Icons.folder_special_outlined,
-            color: const Color(0xFF10B981),
+            color: primaryAccent,
             title: 'Coursework & Demo Portfolio',
             subtitle: 'Store activities, deliverables, repos, and video submissions',
             isDark: isDark,
@@ -548,7 +550,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           _buildFeatureRow(
             icon: Icons.sync_rounded,
-            color: isDark ? const Color(0xFF14B8A6) : const Color(0xFF0D9488),
+            color: primaryAccent,
             title: 'Cloud Cross-Device Sync',
             subtitle: 'Seamless real-time synchronization backed by Firebase',
             isDark: isDark,
