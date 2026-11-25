@@ -5,6 +5,125 @@ import 'dart:typed_data';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
+/// Centralized upload size & batch constraints enforced across the app.
+class FileUploadLimits {
+  /// Minimum file size in bytes (1 byte — rejects empty/0-byte corrupted files
+  /// while still allowing small valid text, code, or config files).
+  static const int minFileSizeBytes = 1;
+
+  /// Maximum size per single file for Cloud Storage uploads (25 MB).
+  static const int maxFileSizeBytes = 25 * 1024 * 1024;
+
+  /// Maximum size for inline Base64 data-URI fallback when Cloud Storage is
+  /// unavailable (500 KB → ~667 KB Base64, safely below Firestore's 1 MiB doc cap).
+  static const int maxInlineFallbackBytes = 500 * 1024;
+
+  /// Maximum number of file/photo attachments per deliverable.
+  static const int maxAttachmentsPerDeliverable = 10;
+
+  /// Maximum combined size of all attachments in a single deliverable (50 MB).
+  static const int maxTotalBatchBytes = 50 * 1024 * 1024;
+
+  static String formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+}
+
+/// Thrown when a file or batch violates [FileUploadLimits] before upload begins.
+class FileValidationException implements Exception {
+  final String code;
+  final String fileName;
+  final int byteCount;
+  final String message;
+
+  const FileValidationException({
+    required this.code,
+    required this.fileName,
+    required this.byteCount,
+    required this.message,
+  });
+
+  @override
+  String toString() => message;
+}
+
+/// Validates individual files and attachment batches against [FileUploadLimits].
+class FileUploadValidator {
+  /// Validates a single file before staging or uploading.
+  /// Throws [FileValidationException] if the file is empty, too large, or unnamed.
+  static void validateFile({
+    required String fileName,
+    required int byteCount,
+  }) {
+    if (fileName.trim().isEmpty) {
+      throw FileValidationException(
+        code: 'invalid-filename',
+        fileName: fileName,
+        byteCount: byteCount,
+        message: 'File name cannot be empty.',
+      );
+    }
+
+    if (byteCount < FileUploadLimits.minFileSizeBytes) {
+      throw FileValidationException(
+        code: 'empty-file',
+        fileName: fileName,
+        byteCount: byteCount,
+        message: '"$fileName" is empty (0 B). Files must be at least 1 byte to upload.',
+      );
+    }
+
+    if (byteCount > FileUploadLimits.maxFileSizeBytes) {
+      final sizeStr = FileUploadLimits.formatBytes(byteCount);
+      final maxStr = FileUploadLimits.formatBytes(FileUploadLimits.maxFileSizeBytes);
+      throw FileValidationException(
+        code: 'file-too-large',
+        fileName: fileName,
+        byteCount: byteCount,
+        message:
+            '"$fileName" ($sizeStr) exceeds the $maxStr per-file upload limit. For large videos or archives, paste a Google Drive, YouTube, or Loom link instead.',
+      );
+    }
+  }
+
+  /// Validates adding one or more new files to an existing attachment list.
+  /// Throws [FileValidationException] if count or total byte limits are exceeded.
+  static void validateBatch({
+    required List<int> newFileSizes,
+    int existingCount = 0,
+    int existingBytes = 0,
+  }) {
+    final totalCount = existingCount + newFileSizes.length;
+    if (totalCount > FileUploadLimits.maxAttachmentsPerDeliverable) {
+      throw FileValidationException(
+        code: 'too-many-files',
+        fileName: '',
+        byteCount: existingBytes,
+        message:
+            'You can attach up to ${FileUploadLimits.maxAttachmentsPerDeliverable} files per deliverable (attempted $totalCount).',
+      );
+    }
+
+    final addedBytes = newFileSizes.fold<int>(0, (sum, size) => sum + size);
+    final totalBytes = existingBytes + addedBytes;
+    if (totalBytes > FileUploadLimits.maxTotalBatchBytes) {
+      final totalStr = FileUploadLimits.formatBytes(totalBytes);
+      final maxStr = FileUploadLimits.formatBytes(FileUploadLimits.maxTotalBatchBytes);
+      throw FileValidationException(
+        code: 'total-size-exceeded',
+        fileName: '',
+        byteCount: totalBytes,
+        message:
+            'Combined attachment size ($totalStr) exceeds the $maxStr limit per deliverable.',
+      );
+    }
+  }
+}
+
 /// Thrown when Cloud Storage is unprovisioned on the Firebase project.
 class StorageNotConfiguredException implements Exception {
   final String fileName;
@@ -118,9 +237,9 @@ class FirebaseStorageService implements StorageService {
     }
   }
 
-  /// Maximum file size (5 MB) that will be stored inline as a data URI
+  /// Maximum file size that will be stored inline as a data URI
   /// when Cloud Storage upload fails or is unavailable.
-  static const int _dataUriFallbackLimit = 5 * 1024 * 1024;
+  static const int _dataUriFallbackLimit = FileUploadLimits.maxInlineFallbackBytes;
 
   @override
   Future<String> uploadDeliverableFile({
@@ -129,6 +248,12 @@ class FirebaseStorageService implements StorageService {
     required String fileName,
     required Uint8List fileBytes,
   }) async {
+    // Enforce minimum & maximum size and filename rules before hitting the network
+    FileUploadValidator.validateFile(
+      fileName: fileName,
+      byteCount: fileBytes.lengthInBytes,
+    );
+
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final sanitizedName = fileName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
     final path = 'users/$userId/courses/$courseId/attachments/${timestamp}_$sanitizedName';
@@ -197,6 +322,11 @@ class MockStorageService implements StorageService {
     required String fileName,
     required Uint8List fileBytes,
   }) async {
+    FileUploadValidator.validateFile(
+      fileName: fileName,
+      byteCount: fileBytes.lengthInBytes,
+    );
+
     if (fileBytes.lengthInBytes <= 256 * 1024) {
       final contentType = FirebaseStorageService.detectContentType(fileName);
       return 'data:$contentType;base64,${base64Encode(fileBytes)}';
