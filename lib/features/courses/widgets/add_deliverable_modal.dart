@@ -159,6 +159,38 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
     return Icons.link;
   }
 
+  int get _currentTotalAttachmentBytes => _attachments.fold<int>(
+        0,
+        (sum, item) => sum + (item.sizeBytes ?? item.bytes?.lengthInBytes ?? 0),
+      );
+
+  /// Validates a candidate file against [FileUploadLimits] before staging it.
+  /// Returns null on success, or an error message if rejected.
+  String? _tryStageFile({
+    required String name,
+    required Uint8List bytes,
+    required int size,
+  }) {
+    try {
+      FileUploadValidator.validateFile(fileName: name, byteCount: size);
+      FileUploadValidator.validateBatch(
+        newFileSizes: [size],
+        existingCount: _attachments.length,
+        existingBytes: _currentTotalAttachmentBytes,
+      );
+      setState(() {
+        _attachments.add(_LocalAttachmentItem(
+          name: name,
+          bytes: bytes,
+          sizeBytes: size,
+        ));
+      });
+      return null;
+    } on FileValidationException catch (e) {
+      return e.message;
+    }
+  }
+
   Future<void> _pickPhoto() async {
     try {
       final picker = ImagePicker();
@@ -168,15 +200,23 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
         imageQuality: 70,
       );
       if (pickedList.isNotEmpty) {
+        final List<String> rejectedMessages = [];
         for (final picked in pickedList) {
           final bytes = await picked.readAsBytes();
-          setState(() {
-            _attachments.add(_LocalAttachmentItem(
-              name: picked.name,
-              bytes: bytes,
-              sizeBytes: bytes.lengthInBytes,
-            ));
-          });
+          final err = _tryStageFile(
+            name: picked.name,
+            bytes: bytes,
+            size: bytes.lengthInBytes,
+          );
+          if (err != null) rejectedMessages.add(err);
+        }
+        if (rejectedMessages.isNotEmpty && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              duration: const Duration(seconds: 5),
+              content: Text(rejectedMessages.first),
+            ),
+          );
         }
       }
     } catch (e) {
@@ -193,23 +233,33 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
       final pickedFiles = await FilePicker.pickFiles();
       if (pickedFiles.isNotEmpty) {
         bool hasVideo = false;
+        final List<String> rejectedMessages = [];
         for (final file in pickedFiles) {
           final bytes = await file.readAsBytes();
-          final size = file.lengthSync() ?? bytes.lengthInBytes;
+          final size = bytes.lengthInBytes;
+          final err = _tryStageFile(
+            name: file.name,
+            bytes: bytes,
+            size: size,
+          );
+          if (err != null) {
+            rejectedMessages.add(err);
+            continue;
+          }
           final lower = file.name.toLowerCase();
           if (lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.webm') || lower.endsWith('.mkv')) {
             hasVideo = true;
           }
-          setState(() {
-            _attachments.add(_LocalAttachmentItem(
-              name: file.name,
-              bytes: bytes,
-              sizeBytes: size,
-            ));
-          });
         }
 
-        if (hasVideo && mounted) {
+        if (rejectedMessages.isNotEmpty && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              duration: const Duration(seconds: 5),
+              content: Text(rejectedMessages.first),
+            ),
+          );
+        } else if (hasVideo && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               duration: Duration(seconds: 4),
@@ -662,7 +712,7 @@ class _AddDeliverableModalState extends State<AddDeliverableModal> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Attach diagrams, photos, documents, or video files. Multiple files supported.',
+                    'Attach diagrams, photos, documents, or videos (1 B – 25 MB per file, max 10 files / 50 MB total).',
                     style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
                   ),
                   const SizedBox(height: 8),
