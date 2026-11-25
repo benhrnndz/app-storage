@@ -245,7 +245,10 @@ class Deliverable {
       'isCompleted': isCompleted,
       'links': allLinks,
       'attachments': currentAttachments.map((a) => a.toMap()).toList(),
-      'attachmentUrl': attachmentUrl,
+      // Avoid duplicating large inline data URIs into legacy attachmentUrl (protects Firestore's 1 MiB doc cap)
+      'attachmentUrl': (attachmentUrl != null && attachmentUrl!.startsWith('data:'))
+          ? null
+          : attachmentUrl,
       'attachmentName': attachmentName,
       'repoUrl': repoUrl ?? (allLinks.isNotEmpty ? allLinks.first : null),
       'videoDemoUrl': videoDemoUrl,
